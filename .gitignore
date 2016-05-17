@@ -1,0 +1,6 @@
+*.mat
+*.eps
+*.fig
+*.png
+*codegen
+*.mexa64

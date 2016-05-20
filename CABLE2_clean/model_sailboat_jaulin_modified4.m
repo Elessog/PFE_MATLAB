@@ -49,12 +49,12 @@ y_dot =    v*sin(theta) + v_cable(2) + p1*a*sin(phi);  %y_dot
 v_dot =   ((Fs*sin(delta_s)-Fr*sin(delta_r))-sign(v)*(p2*(v)^2)+cable_norm*cos(alpha_cable-theta))/p9;
 %differential equations
 angle_v = atan2(v_cable(2),v_cable(1));
-v_dot_cable = (-(p2+3000*sin(angle_v-theta)^2)*(v_cable.*abs(v_cable))+cable_norm*sin(alpha_cable-theta)*[cos(theta+pi/2);sin(theta+pi/2)])/p9;
+v_dot_cable = (-(p2+6000*sin(angle_v-theta)^2)*(v_cable.*abs(v_cable))+cable_norm*sin(alpha_cable-theta)*[cos(theta+pi/2);sin(theta+pi/2)])/p9;
 
 theta_dot = omega;                %theta_dot
 omega_dot = (Fs*(p6-p7*cos(delta_s))-p8*Fr*cos(delta_r)...
     -p3*omega*norm(v)...
-    -(p8+1)*cable_norm*sin(alpha_cable-theta))/p10; %omega_dot
+    -(p8+1)*0.1*cable_norm*sin(alpha_cable-theta))/p10; %omega_dot
 %*cos(delta_r)
 dy = [x_dot,y_dot,0,theta_dot,v_dot,v_dot_cable(1),v_dot_cable(2),omega_dot]';
 

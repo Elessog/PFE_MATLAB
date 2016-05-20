@@ -35,9 +35,9 @@ pointx = [0,20,40,60,30,0];
 pointy = [0,0,20,10,0,0];
 plot(pointx,pointy,'black')
 plot(pos_boat_wt(:,1),pos_boat_wt(:,2),'r')
-plot(y_s(66,:),y_s(67,:),'b')
+plot(y_s(1,:),y_s(2,:),'b')
 plot(pos_to_controller(:,1),pos_to_controller(:,2),'c')
-late = y_s(66:67,:)'+(pos_to_controller(:,1:2)-pos_boat(:,1:2));
+late = y_s(1:2,:)'+(pos_to_controller(:,1:2)-pos_boat(:,1:2));
 plot(late(:,1),late(:,2),'c');
 legend('with smith','path','without smith','predictor','pose to control in smith')
 
@@ -59,11 +59,11 @@ legend('with smith','without smith')
 figure
 subplot(1,2,1)
 hold on
-later =[zeros(2,200) y_s(66:67,1:length(y_s(66,:))-200)];
+later =[zeros(2,200) y_s(1:2,1:length(y_s(1,:))-200)];
 plot(x,later)
-plot(x,y_s(66:67,:))
+plot(x,y_s(1:2,:))
 subplot(1,2,2)
-plot(x,y_s(66:67,:)-later)
+plot(x,y_s(1:2,:)-later)
 
 
 
@@ -75,9 +75,13 @@ index_out=1; %restarting for the controller for visualisation
 
 p1 = 0.05;
 a2 = 2;
-figure(666)
+
 jk = 0;
-for i=1:100:length(x)-1
+
+%aviobj = avifile('smith.avi','compression','None','fps',10);
+%set(figure(666), 'Position', [100, 100, 1120, 840]);
+figure(666)
+for i=1:10:length(x)-1
     %% boat w
     %figure(668)
     clf
@@ -124,7 +128,7 @@ for i=1:100:length(x)-1
     
     %% boat pose to controller
     pos_b = pos_to_controller(i,1:2);
-    theta_pt = pos_to_controller(i,4);
+    theta_pt = pos_to_controller(i,3);
     [a,b2,index_out] = path_planning_v_control(pos_b(1) ,pos_b(2) ,index_out);
     [delta_r, delta_s] = controller_simpleLine_v_control(pos_b(1) ,pos_b(2), theta_pt ,v(i) ,psi, a, b2);      
     sing = sign(sin(theta_boat(i)-psi));
@@ -135,7 +139,9 @@ for i=1:100:length(x)-1
 
     title_f = sprintf('Time : %0.3f s theta %0.2f',i*stepH,theta_boat(i));
     title(title_f);
-
-    pause(stepH*10)
+    pause(stepH*1)
+ %   aviobj = addframe(aviobj,gcf);
+    
     
 end
+%viobj = close(aviobj);

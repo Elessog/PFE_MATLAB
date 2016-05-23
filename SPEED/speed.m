@@ -1,6 +1,6 @@
 close all;
 a=5;
-v =4;
+v =0;
 
 theta = 0;
 kj = 0;
@@ -11,7 +11,7 @@ do_plot = 0;
 for phi=phi_v;
     delta_s = -1.5:0.01:1.5;
     delta_r = -1.5:0.01:1.5;
-    omega = 0;
+    omega = 0.2;
 
     [xx,yy] = meshgrid(delta_s,delta_r);
     delta_s =xx;

@@ -1,4 +1,5 @@
 function dy = model_sailboat_jaulin(y,a,phi,delta_s,delta_r)
+global v_dot fs phi_ap W_ap;
 theta =y(3);
 v=y(4);
 omega=y(5);
@@ -37,6 +38,7 @@ Fr = p5*v*sin(delta_r);             %Force of water on rudder
 
 x_dot =  v*cos(theta) + p1*a*cos(phi);     %x_dot
 y_dot =    v*sin(theta) + p1*a*sin(phi);  %y_dot
+fs = Fs*sin(delta_s);
 v_dot =   ((Fs*sin(delta_s)-Fr*sin(delta_r))-sign(v)*(p2*(v)^2))/p9;
 theta_dot = omega;                %theta_dot
 omega_dot = (Fs*(p6-p7*cos(delta_s))-p8*Fr*cos(delta_r)...

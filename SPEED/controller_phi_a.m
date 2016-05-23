@@ -1,5 +1,5 @@
-function [delta_r, delta_sMax] = controller_simpleLine_v_control(x,y,theta,v_boat, psi, a, b)
-global q v_target pos_sum active_os tacking
+function [delta_r, delta_sMax] = controller_phi_a(x,y,theta,v_boat, psi, a, b,windspeed)
+global q v_target pos_sum active_os tacking 
 %controller_simpleLine Simple line following controller
 %   Controller based on the paper "A simple controller for line 
 %   following of sailboats" by Luc Jaulin and Fabrice Le Bars
@@ -41,11 +41,11 @@ if ((cos(psi-theta_star)+cos(xi) < 0) || ...
         tacking = 1;
     end
     theta_bar = pi + psi - q*xi;
-% elseif (v_target-v_boat)<0
-%     theta_bar = theta_star-sign(e)*xi*exp(abs(v_target-v_boat));
+    %delta_sMax = pi/4*(cos(psi-theta_bar)+1);
 else
     tacking = 0;
     theta_bar = theta_star;
+    
 end
 
 %Step 10-11
@@ -56,6 +56,14 @@ else
 end
 
 %Step 12
-delta_sMax = pi/4*(cos(psi-theta_bar)+1);
+W_ap = [windspeed*cos(psi-theta)-v_boat windspeed*sin(psi-theta)];
+%apperent wind speed vector in b-frame
+phi_ap = atan2(W_ap(2),W_ap(1));    %apperent wind angle in b-frame
+a_ap = hypot(W_ap(1),W_ap(2));      %apperent wind speed velocity in b-frame
+
+
+phi_ap = -abs(phi_ap);
+
+delta_sMax = (phi_ap+pi)/2;
 
 end

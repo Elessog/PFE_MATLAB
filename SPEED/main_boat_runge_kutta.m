@@ -2,7 +2,8 @@ close all;clc;
 global index_out q max_windspeed time_const_wind v_target psi ...
     controller_freq size_rect_cont control_computed delay buffer_command...
     command_buffer_size delta_r delta_s idx_bfc...
-    delta_r_s delta_s_s pos_sum active_os tacking;
+    delta_r_s delta_s_s pos_sum active_os tacking...
+    v_dot fs phi_ap W_ap ;
 
 %%%%%% Time parameters %%%%%%%
 stepH = 0.01;
@@ -12,7 +13,7 @@ x= 0:stepH:600;
 controller_freq = 2;
 size_rect_cont = 0.1;
 control_computed = 0;
-delay = 2;
+delay = 0;
 command_buffer_size =14; %floor(controller_freq*delay)+10;
 buffer_command = zeros(3,command_buffer_size);
 idx_bfc = 1;
@@ -23,13 +24,17 @@ delta_s_s = 0;
 length_delay = floor(delay/stepH)+1;
 active_os = 0;
 tacking = 0;
+fs=0;
+v_dot=0;
+phi_ap=0;
+W_ap = [0,0];
 %% initialization of the state of the boat
 origin = [0;0];
 
 index_out=1;%#ok<NASGU> %index for the path planning script
 q=1; %tacking variable
 max_windspeed = 3;
-time_const_wind = 10;
+time_const_wind = 0.1;
 v_target = 2.3;
 theta_0 = 0*pi/4;
 psi=-3*0*pi/4;
@@ -42,35 +47,25 @@ y = zeros(length(y0),length(x));
 y_s = zeros(length(y0),length(x));
 y(:,1) = y0;                                          % initial condition
 y_s(:,1) = y0;  
-F_xy =@(t,y) boat_simulation(t,y);                    % change the function as you desire
-Fs_xy =@(t,y) boat_simulation_smith(t,y);                    % change the function as you desire
-sauv_delta = zeros(4,length(x));
+F_xy =@(t,y) boat_simulation_aw(t,y);                           % change the function as you desire
+sauv_fs_vdot = zeros(2,length(x));
+sauv_delta = zeros(2,length(x));
+sauv_phi_ap = zeros(1,length(x));
+sauv_w_ap = zeros(2,length(x));
 pos_sum = [0,0,0];
-pos_to_controller = zeros(length(x),3);
 %% computation of the ODE
 for i=1:length(x)-1                            % calculation loop
     
-    if (i>length_delay && i > 1)
-        %active otto_smith
-        active_os = 1;
-        pos_sum_t = y_s(1:3,i-1) -...
-            y_s(1:3,i-length_delay);
-        pos_sum = pos_sum_t';
-    end
+
     k_1 = F_xy(x(i),y(:,i));
     k_2 = F_xy(x(i)+0.5*stepH,y(:,i)+0.5*stepH*k_1);
     k_3 = F_xy(x(i)+0.5*stepH,y(:,i)+0.5*stepH*k_2);
     k_4 = F_xy(x(i)+stepH,y(:,i)+k_3*stepH);
     y(:,i+1) = y(:,i) + (1/6)*(k_1+2*k_2+2*k_3+k_4)*stepH;  % main equation
-    
-    if (mod(i,(1/stepH)/10)==0)
-       y_s(:,i+1) = y_s(:,i) + (10*stepH)*Fs_xy(x(i),y_s(:,i));
-    else
-       y_s(:,i+1) = y_s(:,i);
-    end
-    %% sauvegarde
-    sauv_delta(:,i) = [delta_r;delta_s;delta_r_s;delta_s_s];
-    pos_to_controller(i,:) = y(1:3,i)'+pos_sum;
+    sauv_fs_vdot(:,i+1) = [v_dot fs];
+    sauv_delta(:,i+1) = [delta_r,delta_s];
+    sauv_phi_ap(:,i+1) = phi_ap;
+    sauv_w_ap(:,i+1) = W_ap';
 end
 y= y';
 
@@ -97,7 +92,7 @@ theta_dot_boat=  y(:,5);
 %     clf
 %     pos_b = pos_boat(i,:);
 %     [a,b2,index_out] = path_planning_v_control(pos_b(1) ,pos_b(2) ,index_out);
-%     [delta_r, delta_s] = controller_simpleLine_v_control(pos_b(1) ,pos_b(2), theta_boat(i),v(i) ,psi, a, b2);
+%     [delta_r, delta_s] = controller_simpleLine(pos_b(1) ,pos_b(2), theta_boat(i),v(i) ,psi, a, b2);
 % 
 %     %clf         %clear current figure
 %     hold on
@@ -124,7 +119,7 @@ theta_dot_boat=  y(:,5);
 %     if sing==0
 %         sing = 1;
 %     end
-%     draw_boat([],s,pos_b(1),pos_b(2),theta_boat(i),delta_r,sing*delta_s);
+%     draw_boat([],s,pos_b(1),pos_b(2),theta_boat(i),delta_r,sing*delta_s,'r');
 %     %line([x,x+0.05*axis_max_l*cos(alpha_cable)],[y,y+0.05*axis_max_l*sin(alpha_cable)],'color','c')
 %     %delta_r
 %     %delta_sMax

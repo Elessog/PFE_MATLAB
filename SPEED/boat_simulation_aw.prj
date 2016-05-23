@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.matlabcoder" plugin-version="R2013a">
-  <configuration target="target.matlab.coder" target-name="MEX, C, and C++ Code Generation" name="boat_simulation" location="/home/elessog/MATLAB/PFE/SIMULATION/SPEED" file="/home/elessog/MATLAB/PFE/SIMULATION/SPEED/boat_simulation.prj" build-checksum="1566222718">
+  <configuration target="target.matlab.coder" target-name="MEX, C, and C++ Code Generation" name="boat_simulation_aw" location="/home/elessog/MATLAB/PFE/SIMULATION/SPEED" file="/home/elessog/MATLAB/PFE/SIMULATION/SPEED/boat_simulation_aw.prj" build-checksum="3969056241">
     <profile key="profile.mex">
       <param.MergeInstrumentationResults>false</param.MergeInstrumentationResults>
       <param.BuiltInstrumentedMex>false</param.BuiltInstrumentedMex>
@@ -298,7 +298,7 @@
         <param.UseECoderFeatures />
       </unset>
     </profile>
-    <param.outputfile>${PROJECT_ROOT}/boat_simulation.mexa64</param.outputfile>
+    <param.outputfile>${PROJECT_ROOT}/boat_simulation_aw.mexa64</param.outputfile>
     <param.version>R2012a</param.version>
     <param.HasECoderFeatures>true</param.HasECoderFeatures>
     <param.globals>
@@ -337,7 +337,7 @@
         </Input>
       </Globals>
     </param.globals>
-    <param.mex.mainhtml>/home/elessog/MATLAB/PFE/SIMULATION/SPEED/codegen/mex/boat_simulation/html/index.html</param.mex.mainhtml>
+    <param.mex.mainhtml>/home/elessog/MATLAB/PFE/SIMULATION/SPEED/codegen/mex/boat_simulation_aw/html/index.html</param.mex.mainhtml>
     <param.grt.mainhtml />
     <param.CallGeneratedCodeFromTest>true</param.CallGeneratedCodeFromTest>
     <param.DefaultTestFile />
@@ -346,8 +346,8 @@
     <param.AutoInferUseUnboundedSize>false</param.AutoInferUseUnboundedSize>
     <param.AutoInferVariableSizeThreshold>1024</param.AutoInferVariableSizeThreshold>
     <param.AutoInferUnboundedSizeThreshold>2048</param.AutoInferUnboundedSizeThreshold>
-    <param.mex.outputfile>boat_simulation</param.mex.outputfile>
-    <param.grt.outputfile>boat_simulation</param.grt.outputfile>
+    <param.mex.outputfile>boat_simulation_aw</param.mex.outputfile>
+    <param.grt.outputfile>boat_simulation_aw</param.grt.outputfile>
     <param.artifact>option.target.artifact.mex</param.artifact>
     <param.FixedPointTypeProposalMode>option.FixedPointTypeProposalMode.ProposeFractionLengths</param.FixedPointTypeProposalMode>
     <param.DefaultProposedFixedPointType>numerictype([],16,12)</param.DefaultProposedFixedPointType>
@@ -434,8 +434,8 @@
       <param.DefaultFixedPointSignedness />
     </unset>
     <fileset.entrypoints>
-      <file value="${PROJECT_ROOT}/boat_simulation.m" custom-data-expanded="false">
-        <Inputs fileName="boat_simulation.m" functionName="boat_simulation">
+      <file value="${PROJECT_ROOT}/boat_simulation_aw.m" custom-data-expanded="false">
+        <Inputs fileName="boat_simulation_aw.m" functionName="boat_simulation_aw">
           <Input Name="t">
             <Class>double</Class>
             <Size>1 x 1</Size>
@@ -458,7 +458,7 @@
     <fileset.testbench />
     <fileset.package />
     <build-deliverables>
-      <file name="boat_simulation.mexa64" location="/home/elessog/MATLAB/PFE/SIMULATION/SPEED" optional="false">/home/elessog/MATLAB/PFE/SIMULATION/SPEED/boat_simulation.mexa64</file>
+      <file name="boat_simulation_aw.mexa64" location="/home/elessog/MATLAB/PFE/SIMULATION/SPEED" optional="false">/home/elessog/MATLAB/PFE/SIMULATION/SPEED/boat_simulation_aw.mexa64</file>
     </build-deliverables>
     <workflow />
     <matlab>

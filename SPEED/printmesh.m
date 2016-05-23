@@ -6,13 +6,13 @@ subplot(1,2,1)
 subplot(1,2,2)
 [az,el] = view;
 a=5;
-v =5;
+v =3;
 
 theta = 0;
 
 delta_s = -1.5:0.1:1.5;
 delta_r = -1.5:0.1:1.5;
-omega = 0;
+omega = 0.2;
 
 [xx,yy] = meshgrid(delta_s,delta_r);
 delta_s =xx;

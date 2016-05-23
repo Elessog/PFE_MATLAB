@@ -1,4 +1,4 @@
-function dy = boat_simulation(t,y)
+function dy = boat_simulation_aw(t,y)
 
 global index_out max_windspeed ...
     time_const_wind psi delta_r delta_s delay command_buffer_size ...
@@ -15,8 +15,8 @@ windspeed = max_windspeed*(1-exp(-t/time_const_wind));
 
 if mod(t,1/controller_freq)<(1/controller_freq)*size_rect_cont
    if (~control_computed)
-     [delta_r_s, delta_s_s] = controller_simpleLine(y(1),...
-         y(2), y(3), y(4),psi, a, b);
+     [delta_r_s, delta_s_s] = controller_phi_a(y(1),...
+         y(2), y(3), y(4),psi, a, b,windspeed);
      buffer_command(:,idx_bfc) = [delta_r_s; delta_s_s;t];
      idx_bfc = idx_bfc+1;
      control_computed = 1;

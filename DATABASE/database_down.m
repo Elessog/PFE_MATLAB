@@ -2,6 +2,8 @@
 % You nee matlab-sqlite3-driver to use this file
 %see https://github.com/kyamagu/matlab-sqlite3-driver
 % matlab must be started with library preload
+% for ubuntu:
+% LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libstdc++.so.6:/lib/x86_64-linux-gnu/libgcc_s.so.1" matlab -desktop
 
 if ~exist('database_charged','var')
     database_charged = 0;
@@ -14,13 +16,16 @@ else
 end
 
 if ~database_charged
-    clear all
+    close all;clc;clear all;
     [FileName,PathName] = uigetfile('*.db','Select the database');
-    
+    if FileName==0
+         error('File not chosen');
+    end
     database = sqlite3.open([PathName,FileName]);
     valid_results = sqlite3.execute(database,'SELECT * FROM datalogs WHERE ((gps_lat IS NOT 0) AND date(gps_time)>date(''1980-12-01''))');
     
     time = zeros(1,length(valid_results));
+    lat_long = zeros(2,length(valid_results));
     east_north = zeros(2,length(valid_results));
     tw_d = zeros(1,length(valid_results));
     heading = zeros(1,length(valid_results));
@@ -32,16 +37,20 @@ if ~database_charged
         current_row = valid_results(i);
         [Y,M,D,H,MN,S] =datevec(datenum(current_row.gps_time,'yyyy-mm-dd HH:MM:SS')) ;
         time(i) = (H-H_s)*3600+(MN-MN_s)*60+(S-S_s);
-        [X,Y]=ll2utm(current_row.gps_lat,current_row.gps_lon);
-        east_north(:,i)=[X-X_0,Y-Y_0];
-        %tw_d(i)=-current_row.twd_calc*pi/180+pi/2;
+        lat_long(:,i) = [current_row.gps_lat;current_row.gps_lon];
+        
+        tw_d(i)=-current_row.twd_calc*pi/180+pi/2;
         heading(i)=-current_row.cps_head*pi/180+pi/2;
         v(i) = current_row.gps_spd;
         delta(:,i) = [(current_row.rc_cmd-5520)*(pi/6)/1500;(current_row.sc_cmd-4215)*(pi/-6.165)/900];
     end
+    [X,Y]=ll2utm(lat_long(1,:),lat_long(2,:));
+    east_north=[X-X_0;Y-Y_0];
     database_charged = 1;
     sqlite3.close(database);
 end
+
+
 
 min_x = min(east_north(1,:));
 max_x = max(east_north(1,:));
@@ -63,7 +72,7 @@ time = fixtime(time);
 
 
 
-%% visu
+% visu
 
 
 index_out=1; %restarting for the controller for visualisation
@@ -77,8 +86,8 @@ jk = 0;
 %aviobj = avifile('smith.avi','compression','None','fps',10);
 %set(figure(666), 'Position', [100, 100, 1120, 840]);
 figure(666)
-jump = 100;
-for i=30000:jump:length(time)-1
+jump = 10;
+for i=30:jump:length(time)-1
     %% boat w
     %figure(668)
     clf

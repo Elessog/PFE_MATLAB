@@ -35,3 +35,8 @@ text = char(answer(1));
 
 saveText  = sprintf('%s%s.mat',PathName,text);
 save(saveText,'utm_x','utm_y','lat_out','long_out');
+
+imshow(img);
+hold on
+plot(x,y,'r');
+hold off

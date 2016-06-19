@@ -6,3 +6,5 @@
 *codegen
 *.mexa64
 *~
+*.sqlite
+*.db

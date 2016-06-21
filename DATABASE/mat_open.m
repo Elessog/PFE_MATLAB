@@ -25,7 +25,17 @@ if ~run_charged
         
     end
     
+    [way_lat,way_lont] = utm2ll(utm_x,utm_y,34);
+    [pos_lat,pos_lont] = utm2ll(east_north(1,:)+origin(1),east_north(2,:)+origin(2),34);
     
+    %% google earth view
+    description ='postion of boat';
+    name = 'Test-titre';
+    filename = [FileName(1:end-3),'kml'];
+    filename2 = [FileName(1:end-4),'-waypoint','.kml'];
+    kmlwriteline(filename, pos_lat, pos_lont, ...
+           'Description', description, 'Name', name);
+    kmlwritepoint(filename2,way_lat,way_lont)
     run_charged = 1;
 end
 
@@ -77,7 +87,7 @@ figure
 plot(v,[heading-heading2],'x')
 title('GPS minus Compass heading function of speed');
 %legend('diffe');
-%%
+%% heading change
 heading_comp = heading.*(v>=1)+heading2.*(v<1);
 figure
 plot(time, [heading_comp;heading2]);
@@ -107,6 +117,23 @@ legend('Change GPS','compass');
 % plot(time,v_real)
 
 
+%% v from gps differeniation after 
+v_gps = zeros(length(east_north(1,:))-1,1);
+for i=1:(length(east_north(1,:))-1)
+    v_gps(i) = norm(east_north(:,i)-east_north(:,i+1))/(time(i+1)-time(i));
+end
+
+size_buff = 5;
+v_gps_filt = zeros(length(east_north(1,:))-1,1);
+for i=1:length(v_gps)
+    v_gps_filt(i) = mean(v_gps(max(1,i-size_buff):min(i+size_buff,length(v_gps))));
+end
+
+figure
+hold on
+plot(time(1:end-1),v_gps_filt,'r');
+plot(time,v,'c');
+hold off
 
 %% visu
 

@@ -20,7 +20,8 @@ command = ['SELECT  gps_dataLogs.time, gps_dataLogs.latitude, gps_dataLogs.longi
         'gps_dataLogs.heading,', ...
 'compass_dataLogs.heading,compass_dataLogs.pitch,', ...
 'compass_dataLogs.roll,windsensor_dataLogs.direction,windsensor_dataLogs.speed,', ...
-'course_calculation_dataLogs.tack,system_dataLogs.true_wind_direction_calc', ...
+'course_calculation_dataLogs.tack,system_dataLogs.true_wind_direction_calc,', ...
+'system_dataLogs.sail_command_sail,system_dataLogs.rudder_command_rudder', ...
 ' FROM  system_dataLogs ', ...
 ' INNER JOIN compass_dataLogs ON  system_dataLogs.id_system=compass_dataLogs.id_compass_model', ...
 ' INNER JOIN windsensor_dataLogs ON  system_dataLogs.id_system=windsensor_dataLogs.id_windsensor', ...
@@ -39,7 +40,7 @@ timestamps = [];
 
 time_long = zeros(1,length(valid_results));
 lat_long = zeros(2,length(valid_results));
-if exist('tw_d','var')
+if  isfield(valid_results,'true_wind_direction_calc')
     tw_d_long = zeros(1,length(valid_results));
 end
 heading_long = zeros(1,length(valid_results));
@@ -58,13 +59,13 @@ for i=1:length(valid_results)
             timestamps = [timestamps i-1];
         end
     end
-    if exist('tw_d','var')
-        tw_d_long(i)=-current_row.twd_calc*pi/180+pi/2;
+    if isfield(valid_results,'true_wind_direction_calc')
+        tw_d_long(i)=-current_row.true_wind_direction_calc*pi/180+pi/2;
     end
     heading_long(i)=-current_row.heading*pi/180+pi/2;
     heading_2(i)=-current_row.heading_1*pi/180+pi/2;
     v_long(i) = current_row.speed;
-    %delta_long(:,i) = [(current_row.rc_cmd-5520)*(pi/6)/1500;(current_row.sc_cmd-4215)*(pi/-6.165)/900];
+    delta_long(:,i) = [(current_row.rudder_command_rudder-5520)*(pi/6)/1500;(current_row.sail_command_sail-4215)*(pi/-6.165)/900];
     
 end
 
@@ -106,7 +107,7 @@ for j=1:length(timestamps)
     time = time_long(i_deb:i_end)-time_long(i_deb);
     east_north =[east_north_long(1,i_deb:i_end)-east_north_long(1,i_deb);...
         east_north_long(2,i_deb:i_end)-east_north_long(2,i_deb)];
-    if exist('tw_d','var')
+    if isfield(valid_results,'true_wind_direction_calc')
         tw_d=tw_d_long(i_deb:i_end);
     end
     heading=heading_long(i_deb:i_end);
@@ -114,9 +115,14 @@ for j=1:length(timestamps)
     yaw_2 = -(heading2 +pi/2)*180/pi;
     yaw = -(heading +pi/2)*180/pi;
     v = v_long(i_deb:i_end);
-    %delta =delta_long(:,i_deb:i_end) ;
+    delta =delta_long(:,i_deb:i_end) ;
     savefile = sprintf('mat-%s-%d.mat',FileName(1:length(FileName)-3),j);
-    save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints');
+    origin = east_north_long(:,i_deb)+[X_0;Y_0];
+    if isfield(valid_results,'true_wind_direction_calc')
+        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','tw_d');
+    else
+        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta');
+    end
 end
 
 

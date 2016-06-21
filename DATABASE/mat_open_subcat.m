@@ -1,6 +1,6 @@
 %plot
 global axis_mat time_g east_north_g v_g i_deb i_end ;
-close all;
+close all;clear all;
 if ~exist('run_charged','var')
     run_charged = 0;
 else
@@ -98,6 +98,7 @@ heading2 = heading2(i_deb:i_end);
 yaw_2 =yaw_2(i_deb:i_end);
 yaw = yaw(i_deb:i_end);
 v = v(i_deb:i_end);
-%delta =delta_long(:,i_deb:i_end) ;
-save([text,'.mat'],'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints');
+delta =delta(:,i_deb:i_end) ;
+save([text,'.mat'],'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta');
+clear answer
 

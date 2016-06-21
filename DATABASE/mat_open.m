@@ -15,10 +15,21 @@ if ~run_charged
     [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
     
     load(FileName);
+
+    labview_wayponts = 1;
+    if labview_wayponts
+        [FileName2,PathName2] = uigetfile('*.mat','Select the labview waypoints');
+        load(FileName2);
+        waypoints = [utm_x-origin(1) utm_y-origin(2) (1:length(utm_x))'];
+        
+        
+    end
+    
     
     run_charged = 1;
 end
 
+%%
 
 
 min_x = min(east_north(1,:));
@@ -66,6 +77,35 @@ figure
 plot(v,[heading-heading2],'x')
 title('GPS minus Compass heading function of speed');
 %legend('diffe');
+%%
+heading_comp = heading.*(v>=1)+heading2.*(v<1);
+figure
+plot(time, [heading_comp;heading2]);
+legend('Change GPS','compass');
+
+%% v_real
+% figure
+% plot3(v,heading,heading2,'x')
+% axis square
+% xlabel('v')
+% ylabel('gps')
+% zlabel('compass')
+% 
+% IDX = kmeans([v',heading',heading2'],2);
+% displayFeatures3d([v',heading',heading2'],IDX);
+% 
+% v_real=v.*(IDX'==1)-v.*(IDX'~=1);
+% 
+% figure
+% subplot(1,2,1);
+% plot3(v_real,heading,heading2,'x')
+% axis square
+% xlabel('v')
+% ylabel('gps')
+% zlabel('compass')
+% subplot(1,2,2)
+% plot(time,v_real)
+
 
 
 %% visu
@@ -113,14 +153,16 @@ for i=30:jump:length(time)-1
     %draw wind direction
     m_x = min_x+lar/2;
     m_y = min_y+lar/2;
-%     x_w = [m_x m_x+3*s*cos(psi) m_x+3*s*cos(psi)-s*cos(psi-pi/4) m_x+3*s*cos(psi)-s*cos(psi+pi/4)];
-%     y_w = [m_y m_y+3*s*sin(psi) m_y+3*s*sin(psi)-s*sin(psi-pi/4) m_y+3*s*sin(psi)-s*sin(psi+pi/4)];
-%     line([x_w(1) x_w(2)],[y_w(1) y_w(2)],'color','b');
-%     line([x_w(2) x_w(3)],[y_w(2) y_w(3)],'color','b');
-%     line([x_w(2) x_w(4)],[y_w(2) y_w(4)],'color','b');
-%     pointx = [0,20,40,60,30,0];
-%     pointy = [0,0,20,10,0,0];
-%     plot(pointx,pointy,'black')
+    if exist('tw_d','var')
+        x_w = [m_x m_x+3*s*cos(psi) m_x+3*s*cos(psi)-s*cos(psi-pi/4) m_x+3*s*cos(psi)-s*cos(psi+pi/4)];
+        y_w = [m_y m_y+3*s*sin(psi) m_y+3*s*sin(psi)-s*sin(psi-pi/4) m_y+3*s*sin(psi)-s*sin(psi+pi/4)];
+        line([x_w(1) x_w(2)],[y_w(1) y_w(2)],'color','b');
+        line([x_w(2) x_w(3)],[y_w(2) y_w(3)],'color','b');
+        line([x_w(2) x_w(4)],[y_w(2) y_w(4)],'color','b');
+    end
+    %     pointx = [0,20,40,60,30,0];
+    %     pointy = [0,0,20,10,0,0];
+    %     plot(pointx,pointy,'black')
     sing = -sign(sin(heading(i)-psi));
     if sing==0
         sing = 1;

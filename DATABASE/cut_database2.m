@@ -47,6 +47,7 @@ heading_long = zeros(1,length(valid_results));
 heading_2 = zeros(1,length(valid_results));
 v_long = zeros(1,length(valid_results));
 delta_long = zeros(2,length(valid_results));
+windspeed_long = zeros(1,length(valid_results));
 
 
 for i=1:length(valid_results)
@@ -60,13 +61,13 @@ for i=1:length(valid_results)
         end
     end
     if isfield(valid_results,'true_wind_direction_calc')
-        tw_d_long(i)=-current_row.true_wind_direction_calc*pi/180+pi/2;
+        tw_d_long(i)=pi-current_row.true_wind_direction_calc*pi/180+pi/2;
     end
     heading_long(i)=-current_row.heading*pi/180+pi/2;
     heading_2(i)=-current_row.heading_1*pi/180+pi/2;
     v_long(i) = current_row.speed;
     delta_long(:,i) = [(current_row.rudder_command_rudder-5520)*(pi/6)/1500;(current_row.sail_command_sail-4215)*(pi/-6.165)/900];
-    
+    windspeed_long(i)=current_row.speed_1;
 end
 
 timestamps = [timestamps length(valid_results)];
@@ -118,10 +119,11 @@ for j=1:length(timestamps)
     delta =delta_long(:,i_deb:i_end) ;
     savefile = sprintf('mat-%s-%d.mat',FileName(1:length(FileName)-3),j);
     origin = east_north_long(:,i_deb)+[X_0;Y_0];
+    windspeed = windspeed_long(i_deb:i_end);
     if isfield(valid_results,'true_wind_direction_calc')
-        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','tw_d');
+        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','tw_d','windspeed');
     else
-        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta');
+        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','windspeed');
     end
 end
 

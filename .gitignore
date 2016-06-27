@@ -2,6 +2,10 @@
 *.eps
 *.fig
 *.png
+*.PNG
+*.gif
+*.GIF
+
 *.jpg
 *codegen
 *.mexa64
@@ -9,3 +13,5 @@
 *.sqlite
 *.db
 *.kml
+*googleearth
+*.txt

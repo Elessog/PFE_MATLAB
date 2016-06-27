@@ -90,16 +90,17 @@ text = char(answer(1));
 
 time = time(i_deb:i_end);
 east_north =east_north(:,i_deb:i_end);
-if exist('tw_d','var')
-    tw_d=tw_d(i_deb:i_end);
-end
+
 heading=heading(i_deb:i_end);
 heading2 = heading2(i_deb:i_end);
 yaw_2 =yaw_2(i_deb:i_end);
 yaw = yaw(i_deb:i_end);
 v = v(i_deb:i_end);
 delta =delta(:,i_deb:i_end) ;
-windspeed = windspeed(i_deb:i_end);
-save([text,'.mat'],'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','tw_d','windspeed');
+press = press(i_deb:i_end);
+rudder = rudder(i_deb:i_end);
+sail = sail(i_deb:i_end);
+curr = curr(i_deb:i_end);
+save([text,'.mat'],'time','east_north','heading','heading2','v','yaw','yaw_2','origin','delta','press','rudder','sail','curr');
 clear answer
 

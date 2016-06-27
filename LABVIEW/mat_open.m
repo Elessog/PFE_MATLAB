@@ -15,8 +15,9 @@ if ~run_charged
     [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
     
     load(FileName);
+    
 
-    labview_wayponts = 0;
+    labview_wayponts = 1;
     if labview_wayponts
         [FileName2,PathName2] = uigetfile('*.mat','Select the labview waypoints');
         load(FileName2);
@@ -29,13 +30,20 @@ if ~run_charged
     [pos_lat,pos_lont] = utm2ll(east_north(1,:)+origin(1),east_north(2,:)+origin(2),34);
     
     %% google earth view
+    time = fixtime(time);
     description ='postion of boat';
-    name = 'Test-titre';
+    name = 'Test-cable';
     filename = [FileName(1:end-3),'kml'];
     filename2 = [FileName(1:end-4),'-waypoint','.kml'];
-    kmlwriteline(filename, pos_lat, pos_lont, ...
-           'Description', description, 'Name', name);
+    press_norm = -(press-min(press))*(3/(max(press)-min(press)));
+    
     kmlwritepoint(filename2,way_lat,way_lont)
+    kmlStr = ge_track(time/24/3600,pos_lat,pos_lont,press_norm-min(press_norm),...
+        'name','Run with cable',...
+         'lineColor','#FF0000FF',...
+         'lineWidth',5,...
+         'extendedData',{'Speed',v});
+    ge_output(filename,kmlStr,'name',name)
     run_charged = 1;
 end
 
@@ -68,54 +76,53 @@ xlabel('eastern');
 ylabel('northen');
 
 
-time = fixtime(time);
+
 
 %plot(time,east_north)
 
-figure
-plot(time,[heading;heading2])
-title('GPS and Compass heading');
-legend('gps heading','compass heading');
-
-figure
-plot(time,[heading-heading2])
-title('GPS minus Compass heading');
-%legend('diffe');
-
-
-figure
-plot(v,[heading-heading2],'x')
-title('GPS minus Compass heading function of speed');
-%legend('diffe');
+% figure
+% plot(time,[heading,heading2])
+% title('GPS and Compass heading');
+% legend('gps heading','compass heading');
+% 
+% figure
+% plot(time,[heading-heading2])
+% title('GPS minus Compass heading');
+% %legend('diffe');
+% 
+% 
+% figure
+% plot(v,[heading-heading2],'x')
+% title('GPS minus Compass heading function of speed');
+% %legend('diffe');
 %% heading change
 heading_comp = heading.*(v>=1)+heading2.*(v<1);
 figure
-plot(time, [heading_comp;heading2]);
+plot(time, [heading_comp,heading2]);
 legend('Change GPS','compass');
 
 %% v_real
-figure
-plot3(v,heading,heading2,'x')
-axis square
-xlabel('v')
-ylabel('gps')
-zlabel('compass')
-
-figure
-IDX = kmeans([v',heading',(heading2-heading)'],2);
-displayFeatures3d([v',heading',(heading2-heading)'],IDX);
-
-v_real=v.*(IDX'==1)-v.*(IDX'~=1);
-
-figure
-subplot(1,2,1);
-plot3(v_real,heading,(heading2-heading),'x')
-axis square
-xlabel('v')
-ylabel('gps')
-zlabel('compass')
-subplot(1,2,2)
-plot(time,v_real)
+% figure
+% plot3(v,heading,heading2,'x')
+% axis square
+% xlabel('v')
+% ylabel('gps')
+% zlabel('compass')
+% 
+% IDX = kmeans([v',heading',heading2'],2);
+% displayFeatures3d([v',heading',heading2'],IDX);
+% 
+% v_real=v.*(IDX'==1)-v.*(IDX'~=1);
+% 
+% figure
+% subplot(1,2,1);
+% plot3(v_real,heading,heading2,'x')
+% axis square
+% xlabel('v')
+% ylabel('gps')
+% zlabel('compass')
+% subplot(1,2,2)
+% plot(time,v_real)
 
 
 %% v from gps differeniation after 
@@ -195,7 +202,7 @@ for i=30:jump:length(time)-1
     if sing==0
         sing = 1;
     end
-    draw_boat([],s,pos_b(1),pos_b(2),heading2(i),delta_r,sing*delta_s,'g');
+    draw_boat([],s,pos_b(1),pos_b(2),heading_comp(i),delta_r,sing*delta_s,'g');
     viscircles(waypoints(:,1:2),waypoints(:,3));
     
     title_f = sprintf('Time : %0.2f s theta %0.2f',time(i),heading2(i));

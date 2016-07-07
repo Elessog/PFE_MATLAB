@@ -28,14 +28,25 @@ if ~run_charged
     [way_lat,way_lont] = utm2ll(waypoints(:,1)+origin(1),waypoints(:,2)+origin(2),34);
     [pos_lat,pos_lont] = utm2ll(east_north(1,:)+origin(1),east_north(2,:)+origin(2),34);
     
+    press = arduino(1,:);
+    
     %% google earth view
+    time = fixtime(time);
     description ='postion of boat';
-    name = 'Test-titre';
+    name = 'Test-cable';
     filename = [FileName(1:end-3),'kml'];
     filename2 = [FileName(1:end-4),'-waypoint','.kml'];
-    kmlwriteline(filename, pos_lat, pos_lont, ...
-           'Description', description, 'Name', name);
+    press_norm = -(press-min(press))*(3/(max(press)-min(press)));
+    
+    delta_r_ar = (arduino(2,:)-285)*1600/235*(pi/6)/1500;
+
     kmlwritepoint(filename2,way_lat,way_lont)
+    kmlStr = ge_track(time/24/3600,pos_lat,pos_lont,press_norm-min(press_norm),...
+        'name','Run with cable',...
+         'lineColor','#FF0000FF',...
+         'lineWidth',5,...
+         'extendedData',{'Speed',v;'Tacking',tacking;'Rudder_Act',delta_r_ar});
+    ge_output(filename,kmlStr,'name',name)
     run_charged = 1;
 end
 
@@ -156,7 +167,7 @@ for i=30:jump:length(time)-1
     %figure(668)
     clf
     if exist('tw_d','var')
-        psi = pi+tw_d(i);%-(tw_d(i)+pi/2);
+        psi = tw_d(i);%-(tw_d(i)+pi/2);
     else
         psi = 0;
     end

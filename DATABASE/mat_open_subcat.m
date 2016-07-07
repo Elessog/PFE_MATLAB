@@ -100,6 +100,8 @@ yaw = yaw(i_deb:i_end);
 v = v(i_deb:i_end);
 delta =delta(:,i_deb:i_end) ;
 windspeed = windspeed(i_deb:i_end);
-save([text,'.mat'],'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','tw_d','windspeed');
+arduino = arduino(:,i_deb:i_end);
+tacking = tacking(:,i_deb:i_end);
+save([text,'.mat'],'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','tw_d','windspeed','arduino','tacking');
 clear answer
 

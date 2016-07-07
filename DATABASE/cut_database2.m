@@ -21,13 +21,16 @@ command = ['SELECT  gps_dataLogs.time, gps_dataLogs.latitude, gps_dataLogs.longi
 'compass_dataLogs.heading,compass_dataLogs.pitch,', ...
 'compass_dataLogs.roll,windsensor_dataLogs.direction,windsensor_dataLogs.speed,', ...
 'course_calculation_dataLogs.tack,system_dataLogs.true_wind_direction_calc,', ...
-'system_dataLogs.sail_command_sail,system_dataLogs.rudder_command_rudder', ...
+'system_dataLogs.sail_command_sail,system_dataLogs.rudder_command_rudder,', ...
+'arduino_dataLogs.pressure,arduino_dataLogs.rudder_act,', ...
+'arduino_dataLogs.sheet_act,arduino_dataLogs.battery', ...
 ' FROM  system_dataLogs ', ...
 ' INNER JOIN compass_dataLogs ON  system_dataLogs.id_system=compass_dataLogs.id_compass_model', ...
 ' INNER JOIN windsensor_dataLogs ON  system_dataLogs.id_system=windsensor_dataLogs.id_windsensor', ...
 ' INNER JOIN  course_calculation_dataLogs ON system_dataLogs.id_system=course_calculation_dataLogs.id_course_calculation', ...
 ' INNER JOIN gps_dataLogs ON system_dataLogs.id_system=gps_dataLogs.id_gps', ...
-' WHERE ((gps_dataLogs.latitude IS NOT 0) AND date(gps_dataLogs.time)>date(''1980-12-01''))'];
+' INNER JOIN arduino_dataLogs ON system_dataLogs.id_system=arduino_dataLogs.id', ...
+' WHERE ((gps_dataLogs.latitude IS NOT 0) AND date(gps_dataLogs.time)>date(''1980-12-01'') AND arduino_dataLogs.pressure IS NOT 65535)'];
 
 
 
@@ -48,7 +51,8 @@ heading_2 = zeros(1,length(valid_results));
 v_long = zeros(1,length(valid_results));
 delta_long = zeros(2,length(valid_results));
 windspeed_long = zeros(1,length(valid_results));
-
+arduino_data = zeros(4,length(valid_results));
+tacking_long = zeros(1,length(valid_results));
 
 for i=1:length(valid_results)
     current_row = valid_results(i);
@@ -68,6 +72,8 @@ for i=1:length(valid_results)
     v_long(i) = current_row.speed;
     delta_long(:,i) = [(current_row.rudder_command_rudder-5520)*(pi/6)/1500;(current_row.sail_command_sail-4215)*(pi/-6.165)/900];
     windspeed_long(i)=current_row.speed_1;
+    arduino_data(:,i) = [ current_row.pressure;current_row.rudder_act;current_row.sheet_act;current_row.battery];  
+    tacking_long(i) =current_row.tack; 
 end
 
 timestamps = [timestamps length(valid_results)];
@@ -90,7 +96,7 @@ end
 
 [wayX,wayY]=ll2utm(way_lat,way_lon);
 
-waypoints = [wayX-X_0;wayY-Y_0;1:length(waypoints_sql)]';
+waypoints_t = [wayX-X_0;wayY-Y_0;1:length(waypoints_sql)]';
 
 %% close database
 sqlite3.close(database);
@@ -120,10 +126,15 @@ for j=1:length(timestamps)
     savefile = sprintf('mat-%s-%d.mat',FileName(1:length(FileName)-3),j);
     origin = east_north_long(:,i_deb)+[X_0;Y_0];
     windspeed = windspeed_long(i_deb:i_end);
+    arduino=arduino_data(:,i_deb:i_end);
+    waypoints = [waypoints_t(:,1)-east_north_long(1,i_deb),...
+        waypoints_t(:,2)-east_north_long(2,i_deb),...
+        waypoints_t(:,3)];
+    tacking = tacking_long(i_deb:i_end);
     if isfield(valid_results,'true_wind_direction_calc')
-        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','tw_d','windspeed');
+        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','tw_d','windspeed','arduino','tacking');
     else
-        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','windspeed');
+        save(savefile,'time','east_north','heading','heading2','v','yaw','yaw_2','waypoints','origin','delta','windspeed','arduino','tacking');
     end
 end
 

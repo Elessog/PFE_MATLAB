@@ -8,10 +8,10 @@ function [dy,force_cable] = boat_cable_simulation4(t,y )
 
 %% Cable
 global  Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kdl Kpl...
-    L vect_z boat_dot boat_dotdot index_out windspeed_t...
+    L vect_z boat_dot boat_dotdot windspeed_t...
     psi Lg mg delta_r delta_s delay command_buffer_size ...
-    controller_freq size_rect_cont control_computed buffer_command ...
-    idx_bfc delta_s_s delta_r_s;
+    controller_freq size_rect_cont control_computed buffer_command  ...
+    idx_bfc delta_s_s delta_r_s waypoints;
 
 
 
@@ -95,11 +95,10 @@ force_cable =sum(tauc1r,2);
 
 windspeed = windspeed_t;
 
-[a,b,index_out] = path_planning_v_control(y_boat(1),y_boat(2),index_out);
 
 if mod(t,1/controller_freq)<(1/controller_freq)*size_rect_cont
    if (~control_computed)
-     buffer_command(:,idx_bfc) = [delta_r; delta_s;t];
+     buffer_command(:,idx_bfc) = controller_waypoint_v_control(y(1),y(2),y(3),y(4), psi,windspeed, waypoints);
      idx_bfc = idx_bfc+1;
      control_computed = 1;
    end

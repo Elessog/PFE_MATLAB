@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.matlabcoder" plugin-version="R2013a">
-  <configuration target="target.matlab.coder" target-name="MEX, C, and C++ Code Generation" name="boat_cable_simulation4" location="/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_test_data" file="/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_test_data/boat_cable_simulation4.prj" build-checksum="3833007041">
+  <configuration target="target.matlab.coder" target-name="MEX, C, and C++ Code Generation" name="boat_cable_simulation4" location="/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_with_conroller_test_data" file="/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_with_conroller_test_data/boat_cable_simulation4.prj" build-checksum="1510899405">
     <profile key="profile.mex">
       <param.MergeInstrumentationResults>false</param.MergeInstrumentationResults>
       <param.BuiltInstrumentedMex>false</param.BuiltInstrumentedMex>
@@ -301,7 +301,18 @@
     <param.outputfile>${PROJECT_ROOT}/boat_cable_simulation4.mexa64</param.outputfile>
     <param.version>R2012a</param.version>
     <param.HasECoderFeatures>true</param.HasECoderFeatures>
-    <param.mex.mainhtml>/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_test_data/codegen/mex/boat_cable_simulation4/html/index.html</param.mex.mainhtml>
+    <param.globals>
+      <Globals>
+        <Input Name="m_goingstarboard">
+          <Class>logical</Class>
+          <Size>1 x 1</Size>
+          <Value />
+          <InitialValue>0==1</InitialValue>
+          <UserDefined>true</UserDefined>
+        </Input>
+      </Globals>
+    </param.globals>
+    <param.mex.mainhtml>/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_with_conroller_test_data/codegen/mex/boat_cable_simulation4/html/index.html</param.mex.mainhtml>
     <param.grt.mainhtml />
     <param.CallGeneratedCodeFromTest>true</param.CallGeneratedCodeFromTest>
     <param.DefaultTestFile />
@@ -422,7 +433,7 @@
     <fileset.testbench />
     <fileset.package />
     <build-deliverables>
-      <file name="boat_cable_simulation4.mexa64" location="/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_test_data" optional="false">/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_test_data/boat_cable_simulation4.mexa64</file>
+      <file name="boat_cable_simulation4.mexa64" location="/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_with_conroller_test_data" optional="false">/home/elessog/MATLAB/PFE/SIMULATION/cable2_delay_with_conroller_test_data/boat_cable_simulation4.mexa64</file>
     </build-deliverables>
     <workflow />
     <matlab>

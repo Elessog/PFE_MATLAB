@@ -17,8 +17,12 @@ p9 = 300;           %kg         mass of boat
 p10 = 400;        %kg m^2     mass moment of intertia
 p11 = 0.2; %rudder break coefficient
 
+
+angle_v = atan2(v_cable(2),v_cable(1));
+adjusted_v = v+norm(v_cable)*cos(theta-angle_v);
+
 %link equations
-W_ap = [a*cos(phi-theta)-v a*sin(phi-theta)];
+W_ap = [a*cos(phi-theta)-adjusted_v a*sin(phi-theta)];
 %apperent wind speed vector in b-frame
 phi_ap = atan2(W_ap(2),W_ap(1));    %apperent wind angle in b-frame
 a_ap = hypot(W_ap(1),W_ap(2));      %apperent wind speed velocity in b-frame
@@ -34,7 +38,7 @@ else
 end;
 
 Fs = p4*a_ap*sin(delta_s-phi_ap);  %Force of wind on sail
-Fr = p5*v*sin(delta_r);             %Force of water on rudder
+Fr = p5*adjusted_v*sin(delta_r);             %Force of water on rudder
 
 cable_norm = sqrt(force_cable(1)*force_cable(1)+force_cable(2)*force_cable(2));
 
@@ -46,15 +50,15 @@ end
 
 x_dot =  v*cos(theta) + v_cable(1)+ p1*a*cos(phi);     %x_dot
 y_dot =    v*sin(theta) + v_cable(2) + p1*a*sin(phi);  %y_dot
-v_dot =   ((Fs*sin(delta_s)-p11*Fr*sin(delta_r))-sign(v)*(p2*(v)^2)+cable_norm*cos(alpha_cable-theta))/p9;
+v_dot =   ((Fs*sin(delta_s)-p11*Fr*sin(delta_r))-sign(adjusted_v)*(p2*(adjusted_v)^2)+cable_norm*cos(alpha_cable-theta))/p9;
 %differential equations
-angle_v = atan2(v_cable(2),v_cable(1));
+
 v_dot_cable = (-(p2+3000*sin(angle_v-theta)^2)*(v_cable.*abs(v_cable))+cable_norm*sin(alpha_cable-theta)*[cos(theta+pi/2);sin(theta+pi/2)])/p9;
 
 theta_dot = omega;                %theta_dot
 omega_dot = (Fs*(p6-p7*cos(delta_s))-p8*Fr*cos(delta_r)...
-    -p3*omega*norm(v)...
-    -(p8+1)*cable_norm*sin(alpha_cable-theta))/p10; %omega_dot
+    -p3*omega*norm(adjusted_v)...
+    -(p8-1)*cable_norm*sin(alpha_cable-theta))/p10; %omega_dot
 %*cos(delta_r)
 dy = [x_dot,y_dot,0,theta_dot,v_dot,v_dot_cable(1),v_dot_cable(2),omega_dot]';
 

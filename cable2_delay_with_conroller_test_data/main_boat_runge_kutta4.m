@@ -16,6 +16,14 @@ end
 [way_lat,way_lont] = utm2ll(waypoints(:,1)+origin(1),waypoints(:,2)+origin(2),34);
 [pos_lat,pos_lont] = utm2ll(east_north(1,:)+origin(1),east_north(2,:)+origin(2),34);
 origin2=origin;
+%%% temp fixe
+waypoints_t =waypoints;
+load('waypoint_secondtry.mat');
+waypoints = [wayX'-origin2(1),...
+        wayY'-origin2(2),...
+        waypoints_t(:,3)];
+%%%
+
 waypoints_t =waypoints;
 waypoints(:,3) = 10*ones(length(waypoints(:,1)),1);
 
@@ -28,7 +36,7 @@ global Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kpl Kdl Kil lambdainverse...
 
 i_way=2;
 %% preprocessing of test data
-heading_comp = heading.*(v>=1)+heading2.*(v<1);
+heading_comp =mod( heading.*(v>=1)+heading2.*(v<1),2*pi);
 time = fixtime(time);
 size_buff = 2;
 v_real = v;
@@ -85,7 +93,7 @@ q=1; %tacking variable
 
 theta_0 = heading_comp(1);
 windspeed_t = windspeed(1);
-psi=tw_d(1)+pi;
+psi=tw_d(1);
 
 delta_r = delta(1,1);
 delta_s = delta(2,1);
@@ -101,10 +109,10 @@ L=2.5*ones(rode_number,1);
 Lg = 2.5*ones(rode_number*3,1);
 
 b_0 = zeros(3,rode_number);
-b_0(1,:)=-L'.*cos(theta_0).*cos(pi/3).*ones(1,rode_number);
-b_0(2,:)=-L'.*sin(theta_0).*cos(pi/3).*ones(1,rode_number);
-b_0(3,:)=-L'.*sin(pi/3).*ones(1,rode_number);
-dl = 0.5;
+b_0(1,:)=-L'.*cos(theta_0).*cos(pi/24).*ones(1,rode_number);
+b_0(2,:)=-L'.*sin(theta_0).*cos(pi/24).*ones(1,rode_number);
+b_0(3,:)=-L'.*sin(pi/24).*ones(1,rode_number);
+dl = 0.2;
 m = dl*L;
 mg = dl*Lg;
 r_0 = zeros(3,rode_number);
@@ -184,6 +192,7 @@ y(:,1) = y0;                            % initial condition
 
 F_xy =@(t,y) boat_cable_simulation4(t,y);                    % change the function as you desire
 sauv_delta = zeros(4,length(x));
+wind_save = zeros(length(x),2);
 pos_sum = [0,0,0,0];
 f_cable= zeros(3,length(x));
 
@@ -209,6 +218,7 @@ for i=1:length(x)-1                            % calculation loop
     sauv_delta(:,i) = [delta_r;delta_s;delta_r_s;delta_s_s];
     %delta_r = delta(1,time_idx);
     %delta_s = delta(2,time_idx);
+    wind_save(i,:) = [windspeed_t,psi]; 
 
 end
 
@@ -278,12 +288,6 @@ min_y = min(waypoints(:,2));
 max_y = max(waypoints(:,2));
 end    
 
-%%% temp fixe
-load('waypoint_secondtry.mat');
-waypoints = [wayX'-origin2(1),...
-        wayY'-origin2(2),...
-        waypoints_t(:,3)];
-%%%
 
 
 lar = max([max_y-min_y,max_x-min_x]);
@@ -298,8 +302,8 @@ for i=1:timeJump:length(x)-1
     %% cable
     jk = jk+1;
     if print
-    clf;
-    subplot(1,3,1)
+        clf;
+        subplot(1,3,1)
     end
     pos_b = pos_boat(i,:);
     l = sum(L);
@@ -318,15 +322,15 @@ for i=1:timeJump:length(x)-1
     end
     
     if print
-    draw_cable(l,666,['r','g','b'])
-    
-    %% boat
-    %figure(668)
-    subplot(1,3,2)
+        draw_cable(l,666,['r','g','b'])
+        
+        %% boat
+        %figure(668)
+        subplot(1,3,2)
     end
     
     
-    [force_v_dot,v_dot_main,omega_dot_t,v_dot_cable,f_rudder,f_sail,f_frict] = model_sailboat_jaulin_modified4_visu(y(i,4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+8),a2,psi,delta_s,delta_r,-f_cable(i,:));
+    [force_v_dot,v_dot_main,omega_dot_t,v_dot_cable,f_rudder,f_sail,f_frict] = model_sailboat_jaulin_modified4_visu(y(i,4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+8),wind_save(i,1),wind_save(i,2),sauv_delta(4,i),sauv_delta(3,i),-f_cable(i,:));
     sum_force = (v_dot_main+v_dot_cable)*300;
     omega_dot_v(jk,:) = omega_dot_t;
     rod_end(jk,:) = sum(reshape(b(i,:),3,rode_number),2)';
@@ -334,62 +338,76 @@ for i=1:timeJump:length(x)-1
     v_down(jk) =v(i);
     v_dot_c(jk,:) = v_dot_cable;
     force_v_(jk,:) = force_v_dot;
-    v_dot_(jk,:) = v_dot_main; 
+    v_dot_(jk,:) = v_dot_main;
     f_rudder_(jk,:) = f_rudder;
     f_sail_(jk,:) = f_sail;
     f_frict_(jk,:) = f_frict;
     %clf         %clear current figure
     
     if print
-    hold on
-    xlabel('x [m]')
-    ylabel('y [m]')
-    axis square
-    axis_max_l = lar;
-    s = axis_max_l*.04;
-    
-    axis_min = -20;
-    axis([min_x+axis_min min_x+lar-axis_min min_y+axis_min min_y+lar-axis_min]);
-
-    
-    %draw wind direction
-    m_x = min_x+axis_min+axis_max_l/2;
-    m_y = min_y+axis_min+axis_max_l/2;
-    x_w = [m_x m_x+3*s*cos(psi) m_x+3*s*cos(psi)-s*cos(psi-pi/4) m_x+3*s*cos(psi)-s*cos(psi+pi/4)];
-    y_w = [m_y m_y+3*s*sin(psi) m_y+3*s*sin(psi)-s*sin(psi-pi/4) m_y+3*s*sin(psi)-s*sin(psi+pi/4)];
-    line([x_w(1) x_w(2)],[y_w(1) y_w(2)],'color','b');
-    line([x_w(2) x_w(3)],[y_w(2) y_w(3)],'color','b');
-    line([x_w(2) x_w(4)],[y_w(2) y_w(4)],'color','b');
-    %line([a(1) b2(1)],[a(2) b2(2)],'color','black');
-    
-    %atio = 10;
-    %line([pos_b(1)  pos_b(1)+v(i)*cos(theta_boat(i))*ratio],[pos_b(2)  pos_b(2)+v(i)*sin(theta_boat(i))*ratio],'color','b');
-    %line([pos_b(1)  pos_b(1)+v(i)*cos(theta_boat(i))*ratio+p1*a2*cos(psi)*ratio+v_cable(1)*ratio],[pos_b(2)  pos_b(2)+v(i)*sin(theta_boat(i))*ratio+p1*a2*sin(psi)*ratio+v_cable(2)*ratio],'color','g');
-    
-    %
-       line([pos_b(1)  pos_b(1)+v_dot_main(1)*ratio],[pos_b(2)  pos_b(2)+v_dot_main(2)*ratio],'color','g');
-       line([pos_b(1)-2*cos(theta_boat(i))  pos_b(1)-2*cos(theta_boat(i))+force_v_dot(1)*ratio],...
+        hold on
+        xlabel('x [m]')
+        ylabel('y [m]')
+        axis square
+        axis_max_l = lar;
+        s = axis_max_l*.04;
+        
+        axis_min = -20;
+        axis([min_x+axis_min min_x+lar-axis_min min_y+axis_min min_y+lar-axis_min]);
+        
+        
+        %draw wind direction
+        m_x = min_x+axis_min+axis_max_l/2;
+        m_y = min_y+axis_min+axis_max_l/2;
+        x_w = [m_x m_x+3*s*cos(wind_save(i,2)) m_x+3*s*cos(wind_save(i,2))-s*cos(wind_save(i,2)-pi/4) m_x+3*s*cos(wind_save(i,2))-s*cos(wind_save(i,2)+pi/4)];
+        y_w = [m_y m_y+3*s*sin(wind_save(i,2)) m_y+3*s*sin(wind_save(i,2))-s*sin(wind_save(i,2)-pi/4) m_y+3*s*sin(wind_save(i,2))-s*sin(wind_save(i,2)+pi/4)];
+        line([x_w(1) x_w(2)],[y_w(1) y_w(2)],'color','b');
+        line([x_w(2) x_w(3)],[y_w(2) y_w(3)],'color','b');
+        line([x_w(2) x_w(4)],[y_w(2) y_w(4)],'color','b');
+        %line([a(1) b2(1)],[a(2) b2(2)],'color','black');
+        
+        %atio = 10;
+        %line([pos_b(1)  pos_b(1)+v(i)*cos(theta_boat(i))*ratio],[pos_b(2)  pos_b(2)+v(i)*sin(theta_boat(i))*ratio],'color','b');
+        %line([pos_b(1)  pos_b(1)+v(i)*cos(theta_boat(i))*ratio+p1*a2*cos(psi)*ratio+v_cable(1)*ratio],[pos_b(2)  pos_b(2)+v(i)*sin(theta_boat(i))*ratio+p1*a2*sin(psi)*ratio+v_cable(2)*ratio],'color','g');
+        
+        %
+        line([pos_b(1)  pos_b(1)+v_dot_main(1)*ratio],[pos_b(2)  pos_b(2)+v_dot_main(2)*ratio],'color','g');
+        line([pos_b(1)-2*cos(theta_boat(i))  pos_b(1)-2*cos(theta_boat(i))+force_v_dot(1)*ratio],...
             [pos_b(2)-2*sin(theta_boat(i))  pos_b(2)-2*sin(theta_boat(i))+force_v_dot(2)*ratio],'color','r');
-    %   line([pos_b(1)  pos_b(1)+sum_force(1)*ratio],[pos_b(2)  pos_b(2)+sum_force(2)*ratio],'color','m');
-    %
-    %
-    sing = sign(sin(theta_boat(i)-psi));
-    if sing==0
-        sing = 1;
-    end
-    draw_boat([],s,pos_b(1),pos_b(2),theta_boat(i),sauv_delta(3,i),sing*abs(sauv_delta(4,i)),'b');
-    viscircles(waypoints(:,1:2),waypoints(:,3));
-    %line([x,x+0.05*axis_max_l*cos(alpha_cable)],[y,y+0.05*axis_max_l*sin(alpha_cable)],'color','c')
-    %delta_r
-    %delta_sMax
-    title_f = sprintf('Time : %0.3f s',i*stepH);
-    title(title_f);
-    
-    subplot(1,3,3)
-    plot((1:timeJump:length(x)-1)*stepH,omega_dot_v);legend('sail','rudder','friction','cable');
-    %plot((1:timeJump:length(x)-1)*stepH,rod_end);
-    %plot((1:timeJump:length(x)-1)*stepH,cable_drift);legend('x','y','z');
-    pause(stepH*10000)
+        %   line([pos_b(1)  pos_b(1)+sum_force(1)*ratio],[pos_b(2)  pos_b(2)+sum_force(2)*ratio],'color','m');
+        %
+        %
+        %link equations
+        W_ap = [wind_save(i,1)*cos(wind_save(i,1)-theta_boat(i))-v(i) wind_save(i,1)*sin(wind_save(i,2)-theta_boat(i))];
+        %apperent wind speed vector in b-frame
+        phi_ap = atan2(W_ap(2),W_ap(1));    %apperent wind angle in b-frame
+        a_ap = hypot(W_ap(1),W_ap(2));      %apperent wind speed velocity in b-frame
+        
+        
+        sigma=cos(phi_ap)+cos(sauv_delta(4,i));
+        if (sigma<0),
+            delta_s_show=pi+phi_ap; %get the sail controled by the wind
+        else
+            if sin(phi_ap)~=0
+                delta_s_show=-sign(sin(phi_ap))*abs(sauv_delta(4,i));
+            else
+                delta_s_show = sauv_delta(4,i);
+            end
+        end;
+        
+        draw_boat([],s,pos_b(1),pos_b(2),theta_boat(i),sauv_delta(3,i),delta_s_show,'b');
+        viscircles(waypoints(:,1:2),waypoints(:,3));
+        %line([x,x+0.05*axis_max_l*cos(alpha_cable)],[y,y+0.05*axis_max_l*sin(alpha_cable)],'color','c')
+        %delta_r
+        %delta_sMax
+        title_f = sprintf('Time : %0.3f s',i*stepH);
+        title(title_f);
+        
+        subplot(1,3,3)
+        plot((1:timeJump:length(x)-1)*stepH,omega_dot_v);legend('sail','rudder','friction','cable');
+        %plot((1:timeJump:length(x)-1)*stepH,rod_end);
+        %plot((1:timeJump:length(x)-1)*stepH,cable_drift);legend('x','y','z');
+        pause(stepH*100)
     end
 end
 disp('end');
@@ -404,9 +422,10 @@ force_v_r = force_v_(:,1)./cos(theta_c);
 f_rudder_r= f_rudder_(:,1)./cos(theta_c);
 f_sail_r= f_sail_(:,1)./cos(theta_c);
 f_frict_r= f_frict_(:,1)./cos(theta_c);
+v_dot_c_r = sqrt(v_dot_c(:,1).^2+v_dot_c(:,2).^2).*cos(theta_c-atan2(v_dot_c(:,2),v_dot_c(:,1)));
 
-plot(x(1:timeJump:length(x)-1),[v_dot_r force_v_r f_rudder_r f_sail_r f_frict_r])
-h=legend('$v_{dot}$','$cable$','$f_{rudder}$','$f_{sail}$','$f_{frict}$');
+plot(x(1:timeJump:length(x)-1),[v_dot_r force_v_r f_rudder_r f_sail_r f_frict_r v_dot_c_r v(1:timeJump:end-1) rod_end(:,3)])
+h=legend('$v_{dot}$','$cable$','$f_{rudder}$','$f_{sail}$','$f_{frict}$','$v_{\dot{c}}$','$v$','$rod_{end}$');
 set(h,'Interpreter','latex')
 
 
@@ -420,7 +439,12 @@ plot(pos_boat(:,1),pos_boat(:,2))
 viscircles(waypoints(:,1:2),waypoints(:,3));
 
 
-
+%%
+figure
+plot(x(1:timeJump:length(x)-1),rod_end(:,3))
+xlabel('Time in s')
+ylabel('Depth of en of cable in m');
+title('Depth of cable through the time')
 
 %% simulation to
 t_xr= 1:timeJump:length(x)-1;
@@ -431,7 +455,7 @@ time = fixtime(time);
 description ='postion of boat';
 name = 'Simu_with_cable';
 filename = ['simu_',FileName(1:end-3),'kml'];
-kmlStr = ge_track(t_xr*stepH/24/3600,pos_lat,pos_lont,rod_end(:,3)+min(rod_end(:,3)),...
+kmlStr = ge_track(t_xr*stepH/24/3600,pos_lat,pos_lont,rod_end(:,3)-min(rod_end(:,3)),...
     'name',name,...
     'lineColor','#FF22FFFF',...
     'lineWidth',5,...

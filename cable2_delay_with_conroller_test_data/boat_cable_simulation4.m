@@ -98,9 +98,11 @@ windspeed = windspeed_t;
 
 if mod(t,1/controller_freq)<(1/controller_freq)*size_rect_cont
    if (~control_computed)
-     buffer_command(:,idx_bfc) = controller_waypoint_v_control(y(1),y(2),y(3),y(4), psi,windspeed, waypoints);
-     idx_bfc = idx_bfc+1;
      control_computed = 1;
+     [delta_r,delta_s] = controller_waypoint_v_control(y_boat(1),y_boat(2),y_boat(4),y_boat(5), psi,windspeed, waypoints);
+     buffer_command(:,idx_bfc) = [delta_r;delta_s;t];
+     idx_bfc = idx_bfc+1;
+     
    end
 else
     control_computed = 0;

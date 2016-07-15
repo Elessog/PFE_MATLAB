@@ -32,6 +32,8 @@ if ~run_charged
 	yaw_2_1 = yaw_2;
 	yaw_1 = yaw;
 	v_1 = v;
+    windspeed_1 = windspeed;
+    tw_d_1 = tw_d;
     
     [FileName3,PathName3] = uigetfile('*.mat','Select the MATLAB run');
     
@@ -53,37 +55,72 @@ if ~run_charged
 	yaw_2_2 = yaw_2;
 	yaw_2 = yaw;
 	v_2 = v;
+    windspeed_2 = windspeed;
+    tw_d_2 = tw_d;
+    
     run_charged = 1;
 end
 
 %%
 
 
-min_x = min(east_north_1(1,:));
-max_x = max(east_north_1(1,:));
-min_y = min(east_north_1(2,:));
-max_y = max(east_north_1(2,:));
+min_x1 = min(east_north_1(1,:));
+max_x1 = max(east_north_1(1,:));
+min_y1 = min(east_north_1(2,:));
+max_y1 = max(east_north_1(2,:));
 
 use_waypoint=0;
 
 if use_waypoint
-min_x = min(waypoints_1(:,1));
-max_x = max(waypoints_1(:,1));
-min_y = min(waypoints_1(:,2));
-max_y = max(waypoints_1(:,2));
+min_x1 = min(waypoints_1(:,1));
+max_x1 = max(waypoints_1(:,1));
+min_y1 = min(waypoints_1(:,2));
+max_y1 = max(waypoints_1(:,2));
 end    
 
-lar = max([max_y-min_y,max_x-min_x]);
+lar1 = max([max_y1-min_y1,max_x1-min_x1]);
 
+
+min_x2 = min(east_north_2(1,:));
+max_x2 = max(east_north_2(1,:));
+min_y2 = min(east_north_2(2,:));
+max_y2 = max(east_north_2(2,:));
+
+use_waypoint=0;
+
+if use_waypoint
+min_x2 = min(waypoints_2(:,1));
+max_x2 = max(waypoints_2(:,1));
+min_y2 = min(waypoints_2(:,2));
+max_y2 = max(waypoints_2(:,2));
+end    
+
+lar2 = max([max_y2-min_y2,max_x2-min_x2]);
+
+%%
 figure(1)
-axis_max_l = lar;
+subplot(1,2,1)
+axis_max_l = lar1;
 axis_min = -20;
-axis([min_x+axis_min min_x+lar-axis_min min_y+axis_min min_y+lar-axis_min]);
+axis([min_x1+axis_min min_x1+lar1-axis_min min_y1+axis_min min_y1+lar1-axis_min]);
 plot(east_north_1(1,:),east_north_1(2,:))
-title('path taken by boat');
+viscircles(waypoints_1(:,1:2),waypoints_1(:,3))
+t=title(['path taken by boat ',FileName]);
+set(t,'Interpreter','none'); 
+xlabel('eastern');
+ylabel('northen');
+subplot(1,2,2)
+axis_max_l = lar2;
+axis_min = -20;
+axis([min_x2+axis_min min_x2+lar2-axis_min min_y2+axis_min min_y2+lar2-axis_min]);
+plot(east_north_2(1,:),east_north_2(2,:))
+viscircles(waypoints_2(:,1:2),waypoints_2(:,3))
+t=title(['path taken by boat ',FileName3]);
+set(t,'Interpreter','none'); 
 xlabel('eastern');
 ylabel('northen');
 
+%%
 
 time_1 = fixtime(time_1);
 time_2 = fixtime(time_2);
@@ -93,34 +130,16 @@ time_2 = fixtime(time_2);
 figure
 subplot(1,2,1)
 plot(time_1,[heading_1;heading2_1])
-title('GPS and Compass heading');
+t=title(['GPS and Compass heading ',FileName]);
+set(t,'Interpreter','none'); 
 legend('gps heading','compass heading');
 subplot(1,2,2)
 plot(time_2,[heading_2;heading2_2])
-title('GPS and Compass heading');
+t=title(['GPS and Compass heading ',FileName3]);
+set(t,'Interpreter','none'); 
 legend('gps heading','compass heading');
 
-% figure
-% subplot(1,2,1)
-% plot(time_1,heading_1-heading2_1)
-% title('GPS minus Compass heading');
-% subplot(1,2,2)
-% plot(time_2,heading_2-heading2_2)
-% title('GPS minus Compass heading');
 
-
-%%
-
-%heading_comp_1 = heading_1.*(v_1>=1)+heading2_1.*(v_1<1);
-%heading_comp_1 = heading_1.*(v_1>=1)+heading2_1.*(v_1<1);
-
-figure
-plot(time_1, [heading_comp_1;heading2_1]);
-legend('Change GPS','compass');
-subplot(1,2,2)
-figure
-plot(time_1, [heading_comp_1;heading2_1]);
-legend('Change GPS','compass');
 
 %% v_real
 
@@ -130,11 +149,41 @@ v_real_1=v_1.*(IDX_1'==1)-v_1.*(IDX_1'~=1);
 IDX_2 = kmeans([v_2',heading_2',heading2_2'],2);
 
 v_real_2=v_2.*(IDX_2'==1)-v_2.*(IDX_2'~=1);
+
+v_max = max([v_1,v_2]);
+t_max = max([time_1,time_2]);
+
 figure
 subplot(1,2,1)
-plot(time_1,v_real_1)
+plot(time_1,v_1)
+axis([0 t_max 0 v_max])
+t=title(['Speed ',FileName]);
+set(t,'Interpreter','none'); 
 subplot(1,2,2)
-plot(time_2,v_real_2)
+plot(time_2,v_2)
+axis([0 t_max 0 v_max])
+t=title(['Speed ',FileName3]);
+set(t,'Interpreter','none'); 
+
+%% wind
+figure
+subplot(2,2,1)
+plot(time_1,windspeed_1)
+t=title(['windspeed ', FileName]);
+set(t,'Interpreter','none'); 
+subplot(2,2,2)
+plot(time_2,windspeed_2)
+t=title(['windspeed ', FileName3]);
+set(t,'Interpreter','none'); 
+subplot(2,2,3)
+plot(time_1,tw_d_1)
+t=title(['wind direction ', FileName]);
+set(t,'Interpreter','none'); 
+subplot(2,2,4)
+plot(time_2,tw_d_2)
+t=title(['wind direction ', FileName3]);
+set(t,'Interpreter','none'); 
+
 
 
 

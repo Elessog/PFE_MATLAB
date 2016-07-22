@@ -4,7 +4,7 @@ clear all;close all;clc;
 [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
 
 global waypoints;
-load(FileName);
+load([PathName,FileName]);
 
 labview_waypoints = 0;
 if labview_waypoints
@@ -16,13 +16,6 @@ end
 [way_lat,way_lont] = utm2ll(waypoints(:,1)+origin(1),waypoints(:,2)+origin(2),34);
 [pos_lat,pos_lont] = utm2ll(east_north(1,:)+origin(1),east_north(2,:)+origin(2),34);
 origin2=origin;
-%%% temp fixe
-waypoints_t =waypoints;
-load('waypoint_secondtry.mat');
-waypoints = [wayX'-origin2(1),...
-        wayY'-origin2(2),...
-        waypoints_t(:,3)];
-%%%
 
 waypoints_t =waypoints;
 waypoints(:,3) = 10*ones(length(waypoints(:,1)),1);
@@ -32,9 +25,11 @@ global Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kpl Kdl Kil lambdainverse...
     windspeed_t psi controller_freq...
     size_rect_cont control_computed delay buffer_command idx_bfc...
     command_buffer_size delta_r delta_s tacking...
-     pos_sum active_os delta_s_s delta_r_s i_way;
+     pos_sum active_os delta_s_s delta_r_s i_way previous_tack;
 
 i_way=2;
+
+previous_tack = 0;
 %% preprocessing of test data
 heading_comp =mod( heading.*(v>=1)+heading2.*(v<1),2*pi);
 time = fixtime(time);

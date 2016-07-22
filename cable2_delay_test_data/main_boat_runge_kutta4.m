@@ -3,7 +3,7 @@ clear all;close all;clc;
 
 [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
 
-load(FileName);
+load([PathName,FileName]);
 
 labview_waypoints = 0;
 if labview_waypoints
@@ -75,8 +75,8 @@ delta_s_s = delta(2,1);
 % b_0 = [0 0 0
 %     0  0 0
 %     -1 -1 -1];
-L=2.5*ones(rode_number,1);
-Lg = 2.5*ones(rode_number*3,1);
+L=1.5*ones(rode_number,1);
+Lg = 1.5*ones(rode_number*3,1);
 
 b_0 = zeros(3,rode_number);
 b_0(1,:)=-L'.*cos(theta_0).*cos(pi/3).*ones(1,rode_number);
@@ -255,13 +255,6 @@ max_x = max(waypoints(:,1));
 min_y = min(waypoints(:,2));
 max_y = max(waypoints(:,2));
 end    
-
-%%% temp fixe
-load('waypoint_secondtry.mat');
-waypoints = [wayX'-origin2(1),...
-        wayY'-origin2(2),...
-        waypoints_t(:,3)];
-%%%
 
 lar = max([max_y-min_y,max_x-min_x]);
 

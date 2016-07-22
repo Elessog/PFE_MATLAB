@@ -3,7 +3,7 @@ clear all;close all;clc;
 
 [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
 
-load(FileName);
+load([PathName,FileName]);
 
 labview_waypoints = 0;
 if labview_waypoints
@@ -243,12 +243,10 @@ axis([time(1) 235 -0.02 0.02])
 figure
 subplot(1,2,1)
 plot(time,old_v)
-axis([time(1) 250 1 2])
 title('Real speed')
 
 subplot(1,2,2)
 plot(x,v)
-axis([time(1) 250 1 2])
 title('Simu speed')
 
 %%

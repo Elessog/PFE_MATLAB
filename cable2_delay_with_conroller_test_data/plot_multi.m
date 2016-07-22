@@ -36,15 +36,22 @@ if ~run_charged
     run_charged = 1;
 end
 
+%%
+
 size_waypoints = length(waypoints_1(:,1));
 waypoint_enter_exit_time_1 = [];
 waypoint_enter_exit_time_2 = [];
 
-for i = 1:size_waypoints
-      res = (pos_boat_wt(:,2)-waypoints_1(i,2)).^2+(pos_boat_wt(:,2)-waypoints_1(i,2)).^2 < 100; % is there point close to waypoint
-      res2 = (pos_boat(:,2)-waypoints_2(i,2)).^2+(pos_boat(:,1)-waypoints_2(i,1)).^2 < 100; % is there point close to waypoint
+reach = 15;
+
+deb_waypoints = 1;
+
+for i = deb_waypoints:size_waypoints
+      res = (pos_boat_wt(:,2)-waypoints_1(i,2)).^2+(pos_boat_wt(:,1)-waypoints_1(i,1)).^2 <  reach.^2; % is there point close to waypoint
+      res2 = (pos_boat(:,2)-waypoints_2(i,2)).^2+(pos_boat(:,1)-waypoints_2(i,1)).^2 < reach.^2; % is there point close to waypoint
       
       if ~(sum(res) && sum(res2))
+         i = i-1;
          break 
       end
       
@@ -122,24 +129,31 @@ set(t,'Interpreter','none');
 
 %% analyse waypoint to waypoint
 
-
 if last_waypoint_harvested>1
 
-mean_v = zeros(2,last_waypoint_harvested-1);
-mean_theta = zeros(2,last_waypoint_harvested-1);
+mean_v = zeros(2,last_waypoint_harvested-1-deb_waypoints+1);
+mean_theta = zeros(2,last_waypoint_harvested-1-deb_waypoints+1);
     
-   for i=1:last_waypoint_harvested-2
-     mean_v(1,i) = mean_fix(v_wt(waypoint_enter_exit_time_1(i,2):waypoint_enter_exit_time_1(i+1,1))*10000)/10000;  
-     mean_v(2,i) = mean(v(waypoint_enter_exit_time_2(i,2):waypoint_enter_exit_time_2(i+1,1)));
-     mean_theta(1,i) = mean_fix(theta_boat_wt(waypoint_enter_exit_time_1(i,2):waypoint_enter_exit_time_1(i+1,1)));  
-     mean_theta(2,i) = mean(theta_boat(waypoint_enter_exit_time_2(i,2):waypoint_enter_exit_time_2(i+1,1)));
+   for i=deb_waypoints:last_waypoint_harvested-1
+     mean_v(1,i-deb_waypoints+1) = mean(v_wt(waypoint_enter_exit_time_1(i-deb_waypoints+1,2):waypoint_enter_exit_time_1(i+1-deb_waypoints+1,1)));  
+     mean_v(2,i-deb_waypoints+1) = mean(v(waypoint_enter_exit_time_2(i-deb_waypoints+1,2):waypoint_enter_exit_time_2(i+1-deb_waypoints+1,1)));
+     mean_theta(1,i-deb_waypoints+1) = mean(theta_boat_wt(waypoint_enter_exit_time_1(i-deb_waypoints+1,2):waypoint_enter_exit_time_1(i+1-deb_waypoints+1,1)));  
+     mean_theta(2,i-deb_waypoints+1) = mean(theta_boat(waypoint_enter_exit_time_2(i-deb_waypoints+1,2):waypoint_enter_exit_time_2(i+1-deb_waypoints+1,1)));
     
    end    
 end
 
+
 figure
 subplot(2,1,1)
-plot(1:last_waypoint_harvested-1,mean_v)
+plot(deb_waypoints:last_waypoint_harvested-1,mean_v)
+title('Mean of speed between waypoints')
+leg = legend(FileName1,FileName2);
+set(leg,'Interpreter','none'); 
+
 
 subplot(2,1,2)
-plot(1:last_waypoint_harvested-1,mean_theta)
+plot(deb_waypoints:last_waypoint_harvested-1,mean_theta)
+title('Mean of heading between waypoints')
+leg = legend(FileName1,FileName2);
+set(leg,'Interpreter','none'); 

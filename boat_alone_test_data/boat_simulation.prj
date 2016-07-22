@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.matlabcoder" plugin-version="R2013a">
-  <configuration target="target.matlab.coder" target-name="MEX, C, and C++ Code Generation" name="boat_simulation" location="/home/elessog/MATLAB/PFE/SIMULATION/boat_alone_test_data" file="/home/elessog/MATLAB/PFE/SIMULATION/boat_alone_test_data/boat_simulation.prj" build-checksum="3383070178">
+  <configuration target="target.matlab.coder" target-name="MEX, C, and C++ Code Generation" name="boat_simulation" location="/home/elessog/MATLAB/PFE/SIMULATION/boat_alone_test_data" file="/home/elessog/MATLAB/PFE/SIMULATION/boat_alone_test_data/boat_simulation.prj" build-checksum="3340351424">
     <profile key="profile.mex">
       <param.MergeInstrumentationResults>false</param.MergeInstrumentationResults>
       <param.BuiltInstrumentedMex>false</param.BuiltInstrumentedMex>
@@ -398,7 +398,7 @@
       <param.DefaultFixedPointSignedness />
     </unset>
     <fileset.entrypoints>
-      <file value="/home/elessog/MATLAB/PFE/SIMULATION/boat_alone_with_controller_test_data/boat_simulation.m" custom-data-expanded="true">
+      <file value="${PROJECT_ROOT}/boat_simulation.m" custom-data-expanded="true">
         <Inputs fileName="boat_simulation.m" functionName="boat_simulation">
           <Input Name="t">
             <Class>double</Class>

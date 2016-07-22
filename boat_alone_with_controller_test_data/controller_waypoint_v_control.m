@@ -93,10 +93,10 @@ if distance_to_waypoint<waypoint(3)
    i_way = mod(i_way,length(waypoints(:,1))) +1;
 end
 
-
-if control_computed
-    fprintf('bearing:%f waypoint: %.1f tack: %f courseTosteer: %f offCourse: %f delta: %f \n',bearing_to_waypoint,i_way,double(m_tack),m_courseTo_steer,offCourse,delta_r);
-end
+% 
+% if control_computed
+%     fprintf('bearing:%f waypoint: %.1f tack: %f courseTosteer: %f offCourse: %f delta: %f \n',bearing_to_waypoint,i_way,double(m_tack),m_courseTo_steer,offCourse,delta_r);
+% end
 
 end
 

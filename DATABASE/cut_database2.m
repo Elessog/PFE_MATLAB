@@ -6,7 +6,7 @@
 % LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libstdc++.so.6:/lib/x86_64-linux-gnu/libgcc_s.so.1" matlab -desktop
 
 %this script cut the database into differente mat file corresponding to
-%different time
+%different time periods
 
 
 close all;clc;clear all;
@@ -16,7 +16,7 @@ if FileName==0
 end
 database = sqlite3.open([PathName,FileName]);
 
-command = ['SELECT  gps_dataLogs.time, gps_dataLogs.latitude, gps_dataLogs.longitude, gps_dataLogs.speed,', ...
+command1 = ['SELECT  gps_dataLogs.time, gps_dataLogs.latitude, gps_dataLogs.longitude, gps_dataLogs.speed,', ...
         'gps_dataLogs.heading,', ...
 'compass_dataLogs.heading,compass_dataLogs.pitch,', ...
 'compass_dataLogs.roll,windsensor_dataLogs.direction,windsensor_dataLogs.speed,', ...
@@ -33,12 +33,46 @@ command = ['SELECT  gps_dataLogs.time, gps_dataLogs.latitude, gps_dataLogs.longi
 ' WHERE ((gps_dataLogs.latitude IS NOT 0) AND date(gps_dataLogs.time)>date(''1980-12-01'') AND arduino_dataLogs.pressure IS NOT 65535)'];
 
 
+command2 = ['SELECT  gps_datalogs.time, gps_datalogs.latitude, gps_datalogs.longitude, gps_datalogs.speed,', ...
+        'gps_datalogs.heading,', ...
+'compass_datalogs.heading,compass_datalogs.pitch,', ...
+'compass_datalogs.roll,windsensor_datalogs.direction,windsensor_datalogs.speed,', ...
+'course_calculation_datalogs.tack,system_datalogs.true_wind_direction_calc,', ...
+'system_datalogs.sail_command_sail_state,system_datalogs.rudder_command_rudder_state,', ...
+'arduino_datalogs.pressure,arduino_datalogs.rudder,', ...
+'arduino_datalogs.sheet,arduino_datalogs.current', ...
+' FROM  system_datalogs ', ...
+' INNER JOIN compass_datalogs ON  system_datalogs.id=compass_datalogs.id', ...
+' INNER JOIN windsensor_datalogs ON  system_datalogs.id=windsensor_datalogs.id', ...
+' INNER JOIN  course_calculation_datalogs ON system_datalogs.id=course_calculation_datalogs.id', ...
+' INNER JOIN gps_datalogs ON system_datalogs.id=gps_datalogs.id', ...
+' INNER JOIN arduino_datalogs ON system_datalogs.id=arduino_datalogs.id', ...
+' WHERE ((gps_datalogs.latitude IS NOT 0) AND date(gps_datalogs.time)>date(''1980-12-01'') AND arduino_datalogs.pressure IS NOT 65535)'];
+
+
+fromWebsite = 1;
+choice = questdlg('Where the database come from ?','Select origin of database', ...
+	'Converted From Website', ...
+	'Directly From Py','Directly From Py');
+% Handle response
+switch choice
+    case 'Converted From Website'
+        command = command1;
+    case 'Directly From Py'
+        command = command2;
+        fromWebsite = 0;
+end
 
 valid_results = sqlite3.execute(database,command);
 
 timestamps = [];
 
-[Y_s,M_s,D_s,H_s,MN_s,S_s] =datevec(datenum(valid_results(1).time,'HH:MM:SS'));
+if fromWebsite
+   [Y_s,M_s,D_s,H_s,MN_s,S_s] =datevec(datenum(valid_results(1).time,'HH:MM:SS'));
+else
+   [Y_s,M_s,D_s,H_s,MN_s,S_s] =datevec(datenum(valid_results(1).time,'yyyy-mm-dd HH:MM:SS'));
+end
+
 [X_0,Y_0]=ll2utm(valid_results(1).latitude,valid_results(1).longitude);
 
 time_long = zeros(1,length(valid_results));
@@ -54,26 +88,54 @@ windspeed_long = zeros(1,length(valid_results));
 arduino_data = zeros(4,length(valid_results));
 tacking_long = zeros(1,length(valid_results));
 
-for i=1:length(valid_results)
-    current_row = valid_results(i);
-    [Year,M,D,H,MN,S] =datevec(datenum(current_row.time,'HH:MM:SS')) ;
-    time_long(i) =(D-D_s)*24*3600+(H-H_s)*3600+(MN-MN_s)*60+(S-S_s);
-    lat_long(:,i) = [current_row.latitude;current_row.longitude];
-    if i>1
-        if time_long(i)-time_long(i-1)>30 || time_long(i)-time_long(i-1) < 0
-            timestamps = [timestamps i-1];
+if fromWebsite
+    
+    for i=1:length(valid_results)
+        current_row = valid_results(i);
+        [Year,M,D,H,MN,S] =datevec(datenum(current_row.time,'HH:MM:SS')) ;
+        time_long(i) =(D-D_s)*24*3600+(H-H_s)*3600+(MN-MN_s)*60+(S-S_s);
+        lat_long(:,i) = [current_row.latitude;current_row.longitude];
+        if i>1
+            if time_long(i)-time_long(i-1)>30 || time_long(i)-time_long(i-1) < 0
+                timestamps = [timestamps i-1];
+            end
         end
+        if isfield(valid_results,'true_wind_direction_calc')
+            tw_d_long(i)=pi-current_row.true_wind_direction_calc*pi/180+pi/2;
+        end
+        heading_long(i)=-current_row.heading*pi/180+pi/2;
+        heading_2(i)=-current_row.heading_1*pi/180+pi/2;
+        v_long(i) = current_row.speed;
+        delta_long(:,i) = [(current_row.rudder_command_rudder-5520)*(pi/6)/1500;(current_row.sail_command_sail-4215)*(pi/-6.165)/900];
+        windspeed_long(i)=current_row.speed_1;
+        arduino_data(:,i) = [ current_row.pressure;current_row.rudder_act;current_row.sheet_act;current_row.battery];
+        tacking_long(i) =current_row.tack;
     end
-    if isfield(valid_results,'true_wind_direction_calc')
-        tw_d_long(i)=pi-current_row.true_wind_direction_calc*pi/180+pi/2;
+    
+else
+    
+    for i=1:length(valid_results)
+        current_row = valid_results(i);
+        [Year,M,D,H,MN,S] =datevec(datenum(current_row.time,'yyyy-mm-dd HH:MM:SS')) ;
+        time_long(i) =(D-D_s)*24*3600+(H-H_s)*3600+(MN-MN_s)*60+(S-S_s);
+        lat_long(:,i) = [current_row.latitude;current_row.longitude];
+        if i>1
+            if time_long(i)-time_long(i-1)>30 || time_long(i)-time_long(i-1) < 0
+                timestamps = [timestamps i-1];
+            end
+        end
+        if isfield(valid_results,'true_wind_direction_calc')
+            tw_d_long(i)=pi-current_row.true_wind_direction_calc*pi/180+pi/2;
+        end
+        heading_long(i)=-current_row.heading*pi/180+pi/2;
+        heading_2(i)=-current_row.heading_1*pi/180+pi/2;
+        v_long(i) = current_row.speed;
+        delta_long(:,i) = [(current_row.rudder_command_rudder_state-5520)*(pi/6)/1500;(current_row.sail_command_sail_state-4215)*(pi/-6.165)/900];
+        windspeed_long(i)=current_row.speed_1;
+        arduino_data(:,i) = [ current_row.pressure;current_row.rudder;current_row.sheet;current_row.current];
+        tacking_long(i) =current_row.tack;
     end
-    heading_long(i)=-current_row.heading*pi/180+pi/2;
-    heading_2(i)=-current_row.heading_1*pi/180+pi/2;
-    v_long(i) = current_row.speed;
-    delta_long(:,i) = [(current_row.rudder_command_rudder-5520)*(pi/6)/1500;(current_row.sail_command_sail-4215)*(pi/-6.165)/900];
-    windspeed_long(i)=current_row.speed_1;
-    arduino_data(:,i) = [ current_row.pressure;current_row.rudder_act;current_row.sheet_act;current_row.battery];  
-    tacking_long(i) =current_row.tack; 
+    
 end
 
 timestamps = [timestamps length(valid_results)];

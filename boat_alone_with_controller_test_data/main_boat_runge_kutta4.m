@@ -4,7 +4,7 @@ clear all;close all;clc;
 [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
 
 global waypoints;
-load(FileName);
+load([PathName,FileName]);
 
 labview_waypoints = 0;
 if labview_waypoints
@@ -20,9 +20,11 @@ waypoints(:,3) = 10*ones(length(waypoints(:,1)),1);
 global index_out q psi windspeed_t...
     controller_freq size_rect_cont control_computed delay buffer_command...
     command_buffer_size delta_r delta_s idx_bfc...
-    delta_r_s delta_s_s pos_sum active_os i_way;
+    delta_r_s delta_s_s pos_sum active_os m_goingstarboard i_way previous_tack;
 
 i_way=2;
+previous_tack=0;
+m_goingstarboard= (0==1);
 %% preprocessing of test data
 heading_comp = heading.*(v>=1)+heading2.*(v<1);
 time = fixtime(time);
@@ -41,11 +43,11 @@ old_v = v;
 accel = [accel,0];
 delta_r_ar =(arduino(2,:)-285)*1600/235*(pi/6)/1500;
 
-app_old = -(tw_d-pi-pi/2)-(-(heading2-pi/2));
-twSpeed = sqrt((windspeed.^2+old_v.^2-(2*old_v.*windspeed.*cos(app_old))));
-alpha = acos((windspeed.*cos(app_old)-old_v)./twSpeed);
-windspeed= twSpeed;
-tw_d = mod(pi/2-alpha+pi,2*pi);
+% app_old = -(tw_d-pi-pi/2)-(-(heading2-pi/2));
+% twSpeed = sqrt((windspeed.^2+old_v.^2-(2*old_v.*windspeed.*cos(app_old))));
+% alpha = acos((windspeed.*cos(app_old)-old_v)./twSpeed);
+% windspeed= twSpeed;
+% tw_d = mod(pi/2-alpha+pi,2*pi);
 
 %%
 
@@ -225,7 +227,7 @@ for i=1:timeJump:length(x)-1
         %line([x,x+0.05*axis_max_l*cos(alpha_cable)],[y,y+0.05*axis_max_l*sin(alpha_cable)],'color','c')
         %delta_r
         %delta_sMax
-        title_f = sprintf('Time : %0.3f s',i*stepH);
+        title_f = sprintf('Time : %0.3f s Wind direction %.1f',i*stepH,wrapTo360(wind_save(i,2)*180/pi));
         title(title_f);
         
         pause(stepH*10)
@@ -262,12 +264,10 @@ plot(time(1:end),accel);
 figure
 subplot(1,2,1)
 plot(time,old_v)
-axis([time(1) 250 1 2])
 title('Real speed')
 
 subplot(1,2,2)
 plot(x,v)
-axis([time(1) 250 1 2])
 title('Simu speed')
 
 %%

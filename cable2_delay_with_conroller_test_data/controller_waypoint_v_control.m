@@ -94,9 +94,9 @@ if distance_to_waypoint<waypoint(3)
 end
 
 
-if control_computed
-    fprintf('brg: %.2f wpt: %.0f tack: %.0f cToStr: %.2f ofC: %.2f dltr: %.2f dlts: %.2f relWd: %.2f\n',bearing_to_waypoint,i_way,double(m_tack),m_courseTo_steer,offCourse,delta_r,delta_sMax,relWind);
-end
+% if control_computed
+%     fprintf('brg: %.2f wpt: %.0f tack: %.0f cToStr: %.2f ofC: %.2f dltr: %.2f dlts: %.2f relWd: %.2f\n',bearing_to_waypoint,i_way,double(m_tack),m_courseTo_steer,offCourse,delta_r,delta_sMax,relWind);
+% end
 
 end
 

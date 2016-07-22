@@ -33,7 +33,7 @@ if ~run_charged
     %% google earth view
     time = fixtime(time);
     description ='postion of boat';
-    name = 'Test-cable';
+    name = FileName(1:end-4);
     filename = [FileName(1:end-3),'kml'];
     filename2 = [FileName(1:end-4),'-waypoint','.kml'];
     press_norm = -(press-min(press))*(3/(max(press)-min(press)));
@@ -42,10 +42,10 @@ if ~run_charged
 
     kmlwritepoint(filename2,way_lat,way_lont)
     kmlStr = ge_track(time/24/3600,pos_lat,pos_lont,press_norm-min(press_norm),...
-        'name','Run with cable',...
+        'name',name,...
          'lineColor','#FF0000FF',...
          'lineWidth',5,...
-         'extendedData',{'Speed',v;'Tacking',tacking;'Rudder_Act',delta_r_ar});
+         'extendedData',{'Speed',v;'Tacking',tacking;'Rudder_Act',delta_r_ar;'TW_D',wrapTo360(tw_d*180/pi);'Heading',wrapTo360(heading2*180/pi)});
     ge_output(filename,kmlStr,'name',name)
     run_charged = 1;
 end

@@ -30,6 +30,8 @@ if (t>=buffer_command(3,1)+delay)
     idx_bfc = idx_bfc-1;
     if (idx_bfc==1)
         buffer_command(3,1) = t+1/controller_freq;
+    elseif idx_bfc<=0
+        idx_bfc=1;
     end
 end
 

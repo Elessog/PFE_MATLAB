@@ -14,11 +14,11 @@ windspeed = windspeed_t;
 [a,b,index_out] = path_planning_v_control(y(1),y(2),index_out);
 
 if mod(t,1/controller_freq)<(1/controller_freq)*size_rect_cont
-   if (~control_computed)
-     buffer_command(:,idx_bfc) = [delta_r; delta_s;t];
-     idx_bfc = idx_bfc+1;
-     control_computed = 1;
-   end
+    if (~control_computed)
+        buffer_command(:,idx_bfc) = [delta_r; delta_s;t];
+        idx_bfc = idx_bfc+1;
+        control_computed = 1;
+    end
 else
     control_computed = 0;
 end
@@ -30,6 +30,8 @@ if (t>=buffer_command(3,1)+delay)
     idx_bfc = idx_bfc-1;
     if (idx_bfc==1)
         buffer_command(3,1) = t+1/controller_freq;
+    elseif idx_bfc<=0
+        idx_bfc=1;
     end
 end
 

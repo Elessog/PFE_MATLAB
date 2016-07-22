@@ -3,12 +3,12 @@ clear all;close all;clc;
 
 [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
 
-load(FileName);
+load([PathName,FileName]);
 
 labview_wayponts = 0;
 if labview_wayponts
     [FileName2,PathName2] = uigetfile('*.mat','Select the labview waypoints');
-    load(FileName2);
+    load([PathName2,FileName2]);
     waypoints = [utm_x-origin(1) utm_y-origin(2) (1:length(utm_x))'];
     
     
@@ -65,9 +65,9 @@ boat_dotdot=[accel(1)*cos(heading_comp(1));accel(1)*cos(heading_comp(1));0];
 % b_0 = [0 0 0
 %     0  0 0
 %     -1 -1 -1];
-L=2.5*ones(rode_number,1);
+L=(6/4)*ones(rode_number,1);
 %L(rode_number) = 0.1;
-Lg = 2.5*ones(rode_number*3,1);
+Lg = (6/4)*ones(rode_number*3,1);
 %Lg(rode_number*3-2:rode_number*3) = 4;
 b_0 = zeros(3,rode_number);
 %b_0(1,:)=-L'.*cos(theta_0).*ones(1,rode_number);
@@ -169,12 +169,16 @@ for i=1:1:(length(x)-2)                           % calculation loop
     if(mod(i,1000)==0)
         fprintf('Time: %d/%d index: %d   %d\n',time(time_idx)-time(1),time(end-1)-time(1),time_idx,i);
     end
+    
+    time_vec = max(1,time_idx-2):min(length(accel),time_idx+2);
     dt_temp = (time(time_idx)-x(i+1))/(time(time_idx)-time(time_idx-1));
-    vector_x = east_north(:,time_idx)-east_north(:,time_idx-1);
-    v_v =v_real(time_idx)-dt_temp*(v_real(time_idx)-v_real(time_idx-1));
-    v_acc = accel(time_idx)-dt_temp*(accel(time_idx)-accel(time_idx-1));
-    v_comp = heading_comp(time_idx)-dt_temp*(heading_comp(time_idx)-heading_comp(time_idx-1));
-    boat_pos = [(east_north(:,time_idx)-vector_x*dt_temp);0];
+    east_x = lagrange(x(i+1),time(time_vec),east_north(1,time_vec));
+    east_y = lagrange(x(i+1),time(time_vec),east_north(2,time_vec));
+    
+    v_v = lagrange(x(i+1),time(time_vec),v_real(time_vec));
+    v_acc = lagrange(x(i+1),time(time_vec),accel(time_vec));
+    v_comp =lagrange(x(i+1),time(time_vec),accel(time_vec));
+    boat_pos = [east_x;east_y;0];
     
     boat_dot = [v_v*cos(v_comp);v_v*sin(v_comp);0];
     boat_dotdot =[v_acc*cos(v_comp);v_acc*sin(v_comp);0];
@@ -222,22 +226,24 @@ end
 
 %v = VideoWriter('newfile.avi','Uncompressed AVI');
 %aviobj = avifile('example_osci.avi','compression','None','fps',25);
+
+
+draw_cable = 0;
+
 rod_end  = zeros(length(1:100:length(x)-1),3);
 
-figure(666)
+if draw_cable
+    figure(666)
+end
 jk = 0;
 ratio = 40;
 for i=1:ratio:length(x)-1
     %% cable
     jk = jk+1;
-    clf
     
     pos_b = pos_boat(i,:);
     l = sum(L);
-    axis([-l+pos_b(1) l+pos_b(1)...
-        -l+pos_b(2) l+pos_b(2)...
-        -l+pos_b(3) 2+pos_b(3)])
-    axis vis3d
+    
     l = pos_boat(i,:);
     rod_end(jk,:) = sum(reshape(b(i,:),3,rode_number),2)';
     for number_body=1:rode_number
@@ -249,11 +255,21 @@ for i=1:ratio:length(x)-1
         l = [l; point];
     end
     
-    %draw_cable(l,666,['r','g','b'])
-    %title(sprintf('Time : %.3f',i*stepH));
-    %drawnow
-    %aviobj = addframe(aviobj,gcf);     
-    %pause(ratio*stepH)
+    
+    if draw_cable
+        clf
+        
+        axis([-l+pos_b(1) l+pos_b(1)...
+            -l+pos_b(2) l+pos_b(2)...
+            -l+pos_b(3) 2+pos_b(3)])
+        axis vis3d
+        draw_cable(l,666,['r','g','b'])
+        title(sprintf('Time : %.3f',i*stepH));
+        drawnow
+        %aviobj = addframe(aviobj,gcf);
+        pause(ratio*stepH/10)
+        
+    end
 end
 
 
@@ -265,3 +281,5 @@ rod_end_n = zeros(1,length(rod_end(:,1)));
 for i=1:length(rod_end_n)
     rod_end_n(i) = mean(rod_end(max(1,i-size_buff):min(i+size_buff,length(rod_end_n)),3));
 end
+
+time_2 = x(1:ratio:length(x)-1);

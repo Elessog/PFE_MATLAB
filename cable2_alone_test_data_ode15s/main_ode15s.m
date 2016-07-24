@@ -18,8 +18,9 @@ rode_number = 4;%number of rods to simulate the cable
 
 
 %% preprocessing of test data
+size_buff = 5;
 
-heading_comp = heading.*(v>=1)+heading2.*(v<1);
+heading_comp = correction_angle(heading2,5);%heading.*(v>=1)+heading2.*(v<1);
 IDX = kmeans([v',heading',(heading2-heading)'],2);
 v_real_2=v.*(IDX'==1)-v.*(IDX'~=1);
 
@@ -31,7 +32,7 @@ v_real=v;
 time = fixtime(time);
 
 
-size_buff = 5;
+
 v_real = zeros(1,length(v));
 for i=1:length(v)
     v_real(i) = mean(v(max(1,i-size_buff):min(i+size_buff,length(v))));
@@ -45,6 +46,12 @@ end
 
 
 accel = diff(v_real)./diff(time);
+
+length_cable_press = 3;
+press = arduino(1,:);
+press_norm = -(press-181)*(length_cable_press/(max(press)-181));
+press_norm_0 = press_norm(1)-min(press_norm);
+angle_cable = acos(press_norm_0/3);
 
 
 %% initialization of the state of the boat
@@ -63,9 +70,9 @@ L=(6/4)*ones(rode_number,1);
 Lg = (6/4)*ones(rode_number*3,1);
 %Lg(rode_number*3-2:rode_number*3) = 4;
 b_0 = zeros(3,rode_number);
-%b_0(1,:)=-L'.*cos(theta_0).*ones(1,rode_number);
-%b_0(2,:)=-L'.*sin(theta_0).*ones(1,rode_number);
-b_0(3,:) = -L'.*ones(1,rode_number);
+b_0(1,:)=-L'.*cos(heading_comp(1))*cos(angle_cable).*ones(1,rode_number);
+b_0(2,:)=-L'.*sin(heading_comp(1))*cos(angle_cable).*ones(1,rode_number);
+b_0(3,:) = -L'*sin(angle_cable).*ones(1,rode_number);
 
 dl = 0.5;
 m = dl*L;%mass of rods
@@ -243,11 +250,11 @@ for i=1:ratio:length(x)-1
     end
 end
 
-
+%%
 %viobj = close(aviobj)
 
 
-size_buff = 50;
+size_buff = 60;
 rod_end_n = zeros(1,length(rod_end(:,1)));
 for i=1:length(rod_end_n)
     rod_end_n(i) = mean(rod_end(max(1,i-size_buff):min(i+size_buff,length(rod_end_n)),3));
@@ -257,14 +264,14 @@ time_2 = x(1:ratio:length(x)-1);
 
 figure
 subplot(2,1,1)
-plot(time_2,rod_end_n)
+plot(time_2-time_2(1),rod_end_n)
 title(['Depth cable over time ',FileName])
 t=title(['Depth cable over time ',FileName]);
 set(t,'Interpreter','None')
 xlabel('Time (s)')
 ylabel('Depth (m)')
 subplot(2,1,2)
-plot(time_2,v_2)
+plot(time_2-time_2(1),v_2)
 
 figure
 plot(v_2,rod_end_n,'x')

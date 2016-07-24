@@ -36,7 +36,7 @@ if ~run_charged
     name = FileName(1:end-4);
     filename = [FileName(1:end-3),'kml'];
     filename2 = [FileName(1:end-4),'-waypoint','.kml'];
-    press_norm = -(press-min(press))*(3/(max(press)-min(press)));
+    press_norm = -(press-181)*(3/(max(press)-181));
     
     delta_r_ar = (arduino(2,:)-285)*1600/235*(pi/6)/1500;
 
@@ -147,6 +147,14 @@ plot(time(1:end-1),v_gps_filt,'r');
 plot(time,v,'c');
 hold off
 
+%% depth cable
+figure
+plot(time,press_norm)
+plot(time-time(1),press_norm)
+t = title(['Depth over time ',FileName]);
+xlabel('Time (s)')
+ylabel('Depth (m)')
+set(t,'Interpreter','None')
 %% visu
 
 

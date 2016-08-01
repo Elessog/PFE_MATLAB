@@ -5,7 +5,7 @@
 *.PNG
 *.gif
 *.GIF
-
+*.prj
 *.jpg
 *codegen
 *.mexa64
@@ -16,3 +16,4 @@
 *googleearth
 *.txt
 */kml
+*/mat

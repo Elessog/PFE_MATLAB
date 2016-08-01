@@ -36,16 +36,18 @@ if ~run_charged
     name = FileName(1:end-4);
     filename = [FileName(1:end-3),'kml'];
     filename2 = [FileName(1:end-4),'-waypoint','.kml'];
-    press_norm = -(press-181)*(3/(max(press)-181));
+    pressure = [0,181;1,244;2,302;3,355];
+    press_norm = -lagrange(press,pressure(:,2)',pressure(:,1)');
     
     delta_r_ar = (arduino(2,:)-285)*1600/235*(pi/6)/1500;
 
     kmlwritepoint(filename2,way_lat,way_lont)
-    kmlStr = ge_track(time/24/3600,pos_lat,pos_lont,press_norm-min(press_norm),...
+    kmlStr = ge_track(time/24/3600,pos_lat,pos_lont,press_norm,...
         'name',name,...
          'lineColor','#FF0000FF',...
          'lineWidth',5,...
-         'extendedData',{'Speed',v;'Tacking',tacking;'Rudder_Act',delta_r_ar;'TW_D',wrapTo360(tw_d*180/pi);'Heading',wrapTo360(heading2*180/pi)});
+         'altitudeMode','clampToGround',...
+         'extendedData',{'Depth',press_norm;'Speed',v;'Tacking',tacking;'Rudder_Act',delta_r_ar;'TW_D',wrapTo360(tw_d*180/pi);'Heading',wrapTo360(heading2*180/pi)});
     ge_output(filename,kmlStr,'name',name)
     run_charged = 1;
 end

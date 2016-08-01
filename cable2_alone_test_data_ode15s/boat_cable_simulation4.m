@@ -27,7 +27,7 @@ east_y = lagrange(t,time(time_vec),east_north(2,time_vec));
 v_v = lagrange(t,time(time_vec),v_real(time_vec));
 v_acc = lagrange(t,time(time_vec),accel(time_vec));
 v_comp =lagrange(t,time(time_vec),heading_comp(time_vec));
-boat_pos = [east_x;east_y;0];
+boat_pos = [east_x;east_y;-0.30];
 
 boat_dot = [v_v*cos(v_comp);v_v*sin(v_comp);0];
 boat_dotdot =[v_acc*cos(v_comp);v_acc*sin(v_comp);0];
@@ -58,8 +58,9 @@ Ndotdot(1:3,1) =boat_dotdot;
 %cable
 Ldot = zeros(rode_number,1);
 %fa and fb construction
-P_Arch = ((-mg*9.81+1000*9.81*pi*Lg*radius^2)/2).*vect_z;
-FluidFriction = (-1*2*radius*Lg*1000/2).*rdot;
+P_Arch = ((-mg*9.81+1000*9.81*pi*Lg*radius^2)).*vect_z;
+
+FluidFriction = (-1.2*2*radius*abs(b)*1000/2).*rdot.*abs(rdot);
 
 
 fa=zeros(3*rode_number,1)+P_Arch+FluidFriction;

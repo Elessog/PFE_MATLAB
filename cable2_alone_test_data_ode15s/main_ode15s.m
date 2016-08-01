@@ -30,6 +30,7 @@ idx = idx1 | idx2;
 v_real = v.*(idx==0)-v.*(idx==1);
 v_real=v;
 time = fixtime(time);
+time =time-time(1);
 
 
 
@@ -49,14 +50,15 @@ accel = diff(v_real)./diff(time);
 
 length_cable_press = 3;
 press = arduino(1,:);
-press_norm = -(press-181)*(length_cable_press/(max(press)-181));
-press_norm_0 = press_norm(1)-min(press_norm);
+pressure = [0,181;1,244;2,302;3,355];
+press_norm = -lagrange(press,pressure(:,2)',pressure(:,1)');
+press_norm_0 = press_norm(1);
 angle_cable = acos(press_norm_0/3);
 
 
 %% initialization of the state of the boat
 
-boat_pos = [east_north(1,1);east_north(2,1);0];
+boat_pos = [east_north(1,1);east_north(2,1);-0.30];
 boat_dot=[v_real(1)*cos(heading_comp(1));v_real(1)*sin(heading_comp(1));0];
 boat_dotdot=[accel(1)*cos(heading_comp(1));accel(1)*cos(heading_comp(1));0];
 %theta_0 = heading_comp;
@@ -74,11 +76,11 @@ b_0(1,:)=-L'.*cos(heading_comp(1))*cos(angle_cable).*ones(1,rode_number);
 b_0(2,:)=-L'.*sin(heading_comp(1))*cos(angle_cable).*ones(1,rode_number);
 b_0(3,:) = -L'*sin(angle_cable).*ones(1,rode_number);
 
-dl = 0.5;
+dl = 0.130;
 m = dl*L;%mass of rods
 mg = dl*Lg;% mass of every direction
-m(length(m)) =m(length(m));
-mg(length(mg)-2:length(mg))=m(length(m)) ;
+m(2) =m(2)+0.300;
+mg((2-1)*3+1:3)=m(2) ;
 r_0 = zeros(3,rode_number);
 r_0(:,1) = b_0(:,1)/2.0+boat_pos;
 
@@ -127,7 +129,7 @@ Nn1c(1:3)=boat_pos;
 
 %%% constraint controler coefficients %%
 %%% for the cable simulation      %%%%%%
-wnl=500;
+wnl=1000;
 zeta=1;
 Kpl=wnl^2;
 Kdl=2*zeta*wnl;
@@ -156,7 +158,7 @@ F_xy =@(t,y) boat_cable_simulation4(t,y);                    % change the functi
 f_cable= zeros(3,length(x));
 
 %% computation of the ODE
-[t,y] = ode15s(@boat_cable_simulation4,x,y0);
+[t,y] = ode45(@boat_cable_simulation4,x,y0);
 
 
 
@@ -199,6 +201,7 @@ draw_cable_ = 0;
 
 ratio = 1;
 rod_end  = zeros(length(1:ratio:length(x)-1),3);
+rod_end_2 = zeros(length(1:ratio:length(x)-1),3);
 v_2 = zeros(length(1:ratio:length(x)-1),1);
 
 v_ = sqrt(y(:,4*3*rode_number+rode_number+4).^2+y(:,4*3*rode_number+rode_number+5).^2);
@@ -222,7 +225,9 @@ for i=1:ratio:length(x)-1
     l = sum(L);
     
     l = pos_boat(i,:);
-    rod_end(jk,:) = sum(reshape(b(i,:),3,rode_number),2)';
+    reshapeB = reshape(b(i,:),3,rode_number);
+    rod_end(jk,:) = sum(reshapeB,2)';
+    rod_end_2(jk,:) = sum(reshapeB(:,1:2),2)';
     for number_body=1:rode_number
         
         point=pos_boat(i,:);
@@ -254,10 +259,12 @@ end
 %viobj = close(aviobj)
 
 
-size_buff = 60;
+size_buff = 100;
 rod_end_n = zeros(1,length(rod_end(:,1)));
+rod_end_n_2 = zeros(1,length(rod_end(:,1)));
 for i=1:length(rod_end_n)
     rod_end_n(i) = mean(rod_end(max(1,i-size_buff):min(i+size_buff,length(rod_end_n)),3));
+    rod_end_n_2(i) = mean(rod_end_2(max(1,i-size_buff):min(i+size_buff,length(rod_end_n_2)),3));
 end
 
 time_2 = x(1:ratio:length(x)-1);
@@ -265,8 +272,7 @@ time_2 = x(1:ratio:length(x)-1);
 figure
 subplot(2,1,1)
 plot(time_2-time_2(1),rod_end_n)
-title(['Depth cable over time ',FileName])
-t=title(['Depth cable over time ',FileName]);
+t=title(['Simulation Depth cable over time ',FileName]);
 set(t,'Interpreter','None')
 xlabel('Time (s)')
 ylabel('Depth (m)')

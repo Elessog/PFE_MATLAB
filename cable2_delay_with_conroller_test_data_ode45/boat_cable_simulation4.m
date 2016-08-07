@@ -48,14 +48,16 @@ Ndotdot(1:3,1) =boat_dotdot;
 %cable
 Ldot = zeros(rode_number,1);
 %fa and fb construction
-P_Arch = ((-mg*9.81+1000*9.81*pi*Lg*radius^2)/2).*vect_z;
-FluidFriction = (-1*2*radius*Lg*1000/2).*rdot;
+P_Arch = ((-mg*9.81+1000*9.81*pi*Lg*radius^2)).*vect_z;
+
+FluidFriction = (-1.2*2*radius*abs(b)*1000/2).*rdot.*abs(rdot);
 
 
 fa=zeros(3*rode_number,1)+P_Arch+FluidFriction;
 fb=fa;
 
-tau1 = (fa+fb)./mg;
+tau1 = (fa+fb)./(2*mg);
+
 
 C = Wn1c*r+Pn1c*b+N;
 
@@ -106,7 +108,7 @@ if mod(t,1/controller_freq)<(1/controller_freq)*size_rect_cont
    if (~control_computed)
      control_computed = 1;
      [delta_r,delta_s] = controller_waypoint_v_control(y_boat(1),y_boat(2),y_boat(4),y_boat(5), psi,windspeed_t, waypoints);
-     buffer_command(:,idx_bfc) = [delta_r;delta_s;t];
+     %buffer_command(:,idx_bfc) = [delta_r;delta_s;t];
      idx_bfc = idx_bfc+1;
      
    end
@@ -115,17 +117,17 @@ else
 end
 
 if (t>=buffer_command(3,1)+delay)
-    delta_r_s = buffer_command(1,1);
-    delta_s_s = buffer_command(2,1);
-    buffer_command(:,1:command_buffer_size-1) = buffer_command(:,2:command_buffer_size);
-    idx_bfc = idx_bfc-1;
-    if (idx_bfc==1)
-        buffer_command(3,1) = t+1/controller_freq;
-    end
+    %delta_r_s = buffer_command(1,1);
+    %delta_s_s = buffer_command(2,1);
+    %buffer_command(:,1:command_buffer_size-1) = buffer_command(:,2:command_buffer_size);
+    %idx_bfc = idx_bfc-1;
+    %if (idx_bfc==1)
+    %    buffer_command(3,1) = t+1/controller_freq;
+    %end
 end
 
 [dy_boat,alpha_cable] = model_sailboat_jaulin_modified4(y_boat,windspeed_t,...
-    psi,delta_s_s,delta_r_s,-force_cable);
+    psi,delta_s,delta_r,-force_cable);
 
 boat_dot = [dy_boat(1:2);0];
 boat_dotdot = [dy_boat(5)*cos(y_boat(4))+dy_boat(6);...

@@ -46,7 +46,13 @@ for i=1:length(v)
 end
 
 
-accel = diff(v_real)./diff(time);
+accel1 = diff(v_real)./diff(time);
+
+size_buff = 10;
+accel = zeros(1,length(accel));
+for i=1:length(accel1)
+    accel(i) = mean(accel1(max(1,i-size_buff):min(i+size_buff,length(accel1))));
+end
 
 length_cable_press = 3;
 press = arduino(1,:);
@@ -67,20 +73,21 @@ boat_dotdot=[accel(1)*cos(heading_comp(1));accel(1)*cos(heading_comp(1));0];
 % b_0 = [0 0 0
 %     0  0 0
 %     -1 -1 -1];
-L=(6/4)*ones(rode_number,1);
+length_cable = 6;
+L=(length_cable/rode_number)*ones(rode_number,1);
 %L(rode_number) = 0.1;
-Lg = (6/4)*ones(rode_number*3,1);
+Lg = (length_cable/rode_number)*ones(rode_number*3,1);
 %Lg(rode_number*3-2:rode_number*3) = 4;
 b_0 = zeros(3,rode_number);
 b_0(1,:)=-L'.*cos(heading_comp(1))*cos(angle_cable).*ones(1,rode_number);
 b_0(2,:)=-L'.*sin(heading_comp(1))*cos(angle_cable).*ones(1,rode_number);
 b_0(3,:) = -L'*sin(angle_cable).*ones(1,rode_number);
 
-dl = 0.130;
+dl = 0.130;%linear mass of the cable
 m = dl*L;%mass of rods
 mg = dl*Lg;% mass of every direction
-m(2) =m(2)+0.300;
-mg((2-1)*3+1:3)=m(2) ;
+m(rode_number/2) =m(rode_number/2)+0.300;
+mg((rode_number/2-1)*3+1:3)=m(rode_number/2) ;
 r_0 = zeros(3,rode_number);
 r_0(:,1) = b_0(:,1)/2.0+boat_pos;
 
@@ -160,8 +167,6 @@ f_cable= zeros(3,length(x));
 %% computation of the ODE
 [t,y] = ode45(@boat_cable_simulation4,x,y0);
 
-
-
 %% data reorganization
 
 b = y(:,1:3*rode_number);
@@ -175,15 +180,49 @@ pos_boat = y(:,4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+3);
 % v_cable =  y(:,4*3*rode_number+rode_number+6:4*3*rode_number+rode_number+7);
 % theta_dot_boat=  y(:,4*3*rode_number+rode_number+8);
 
+%% computaion of forces
 
-% f_cable_frameBoat = f_cable;% Transform the force of the cable to the frame of the boat
-% for i=1:length(f_cable_frameBoat(:,1))
-%     f_cable_frameBoat(i,:)=([cos(-theta_boat(i)) -sin(-theta_boat(i)) 0;
-%         sin(-theta_boat(i)) cos(-theta_boat(i)) 0;
-%         0 0 1]*(f_cable(i,:)'))';
-%     
-% end
+%fa and fb construction
 
+
+rdotdot_ = diff(rdot)/stepH;
+radius = 0.005;
+
+f_cable=zeros(length(x),3);
+for i=2:length(rdot(:,1))
+  P_Arch = ((-mg*9.81+1000*9.81*pi*Lg*radius^2)).*vect_z;
+  FluidFriction = (-1.2*2*radius*abs(b(i,:))*1000/2).*rdot(i,:).*abs(rdot(i,:));
+  fa=zeros(3*rode_number,1)+P_Arch+FluidFriction';
+  fb=fa;
+  tau1 = (fa+fb)./mg;
+  tauc1 = rdotdot_(i-1,:)'-tau1;
+  tauc1r = reshape(mg.*tauc1,3,rode_number);
+  f_cable(i,:) =sum(tauc1r,2)';
+end
+
+
+accel_x= zeros(size(x));
+comp_x = zeros(size(x));
+v_x =  zeros(size(x));
+
+for i=1:length(x)
+   time_idx = find(time>=x(i),1,'first');
+   time_vec = max(1,time_idx-2):min(length(accel),time_idx+2);
+   accel_x(i) =lagrange(x(i),time(time_vec),accel(time_vec));
+   comp_x(i) =lagrange(x(i),time(time_vec),heading_comp(time_vec));
+   v_x(i) = lagrange(x(i),time(time_vec),v_real(time_vec));
+end
+
+f_cable_frameBoat = f_cable;% Transform the force of the cable to the frame of the boat
+for i=1:length(f_cable_frameBoat(:,1))
+   f_cable_frameBoat(i,:)=([cos(-comp_x(i)) -sin(-comp_x(i)) 0;
+        sin(-comp_x(i)) cos(-comp_x(i)) 0;
+        0 0 1]*(f_cable(i,:)'))';
+    
+end
+
+
+%%
 errorLdot = zeros(length(x),rode_number);% compute the error of the simulation on the length of the cable
 for j=1:length(x)
     for k=1:rode_number
@@ -227,7 +266,7 @@ for i=1:ratio:length(x)-1
     l = pos_boat(i,:);
     reshapeB = reshape(b(i,:),3,rode_number);
     rod_end(jk,:) = sum(reshapeB,2)';
-    rod_end_2(jk,:) = sum(reshapeB(:,1:2),2)';
+    rod_end_2(jk,:) = sum(reshapeB(:,1:rode_number/2),2)';
     for number_body=1:rode_number
         
         point=pos_boat(i,:);

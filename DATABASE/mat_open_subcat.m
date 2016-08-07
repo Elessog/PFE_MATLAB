@@ -15,7 +15,7 @@ if ~run_charged
     clear all
     [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
     global axis_mat time_g east_north_g v_g i_deb i_end ; %#ok<TLEV,REDEF>
-    load(FileName);
+    load([PathName,FileName]);
     i_deb = 1;
     i_end = length(v);
     

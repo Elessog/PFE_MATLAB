@@ -66,7 +66,7 @@ FluidFriction = (-1.2*2*radius*abs(b)*1000/2).*rdot.*abs(rdot);
 fa=zeros(3*rode_number,1)+P_Arch+FluidFriction;
 fb=fa;
 
-tau1 = (fa+fb)./mg;
+tau1 = (fa+fb)./(2*mg);
 
 C = Wn1c*r+Pn1c*b+N;
 

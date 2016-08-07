@@ -3,7 +3,7 @@ clear all;close all;clc;
 
 [FileName,PathName] = uigetfile('*.mat','Select the MATLAB run');
 
-global waypoints;
+global waypoints time;
 load([PathName,FileName]);
 
 labview_waypoints = 0;
@@ -22,7 +22,7 @@ waypoints(:,3) = 10*ones(length(waypoints(:,1)),1);
 
 global Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kpl Kdl Kil lambdainverse...
     vect_x vect_y vect_z boat_dot boat_dotdot L Lg m mg index_out q ...
-    windspeed_t psi controller_freq...
+    windspeed tw_d controller_freq...
     size_rect_cont control_computed delay buffer_command idx_bfc...
     command_buffer_size delta_r delta_s tacking...
      pos_sum active_os delta_s_s delta_r_s i_way previous_tack;
@@ -32,7 +32,7 @@ i_way=2;
 previous_tack = 0;
 %% preprocessing of test data
 heading_comp =mod( heading.*(v>=1)+heading2.*(v<1),2*pi);
-time = fixtime(time);
+time = fixtime(time)-time(1);
 size_buff = 2;
 v_real = v;
 v_t = v_real;
@@ -55,11 +55,19 @@ alpha = acos((windspeed.*cos(app_old)-old_v)./twSpeed);
 windspeed= twSpeed;
 tw_d = mod(pi/2-alpha+pi,2*pi);
 
+length_cable_press = 3;
+press = arduino(1,:);
+pressure = [0,181;1,244;2,302;3,355];
+press_norm = -lagrange(press,pressure(:,2)',pressure(:,1)')+0.3;
+press_norm_0 = press_norm(1);
+angle_cable = asin(-press_norm_0/3);
+
+
 
 %% 
 
 %%%%%% Time parameters %%%%%%%
-stepH = 0.001;
+stepH = 0.01;
 x= time(1):stepH:time(end-1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -100,21 +108,26 @@ delta_s_s = delta(2,1);
 % b_0 = [0 0 0
 %     0  0 0
 %     -1 -1 -1];
-L=2.5*ones(rode_number,1);
-Lg = 2.5*ones(rode_number*3,1);
-
+length_cable = 6;
+L=(length_cable/rode_number)*ones(rode_number,1);
+%L(rode_number) = 0.1;
+Lg = (length_cable/rode_number)*ones(rode_number*3,1);
+%Lg(rode_number*3-2:rode_number*3) = 4;
 b_0 = zeros(3,rode_number);
-b_0(1,:)=-L'.*cos(theta_0).*cos(pi/24).*ones(1,rode_number);
-b_0(2,:)=-L'.*sin(theta_0).*cos(pi/24).*ones(1,rode_number);
-b_0(3,:)=-L'.*sin(pi/24).*ones(1,rode_number);
-dl = 0.2;
-m = dl*L;
-mg = dl*Lg;
+b_0(1,:)=-L'.*cos(heading_comp(1))*cos(angle_cable).*ones(1,rode_number);
+b_0(2,:)=-L'.*sin(heading_comp(1))*cos(angle_cable).*ones(1,rode_number);
+b_0(3,:) = -L'*sin(angle_cable).*ones(1,rode_number);
+
+dl = 0.130;%linear mass of the cable
+m = dl*L;%mass of rods
+mg = dl*Lg;% mass of every direction
+m(rode_number/2) =m(rode_number/2)+0.300;
+mg((rode_number/2-1)*3+1:3)=m(rode_number/2) ;
 r_0 = zeros(3,rode_number);
 r_0(:,1) = b_0(:,1)/2.0+origin;
 
 for i=2:length(b_0(1,:))
-    r_0(:,i) = origin+sum(b_0(:,1:i-1),2)+b_0(:,i)/2.0;
+    r_0(:,i) = origin+sum(b_0(:,1:i-1),2)+b_0(:,i)/2.0;%positionning boat
 end
 
 %vect_dir creation for easy force adding
@@ -158,7 +171,7 @@ Nn1c(1:3)=origin;
 
 %%% constraint controler coefficients %%
 %%% for the cable simulation      %%%%%%
-wnl=500;
+wnl=1000;
 zeta=1;
 Kpl=wnl^2;
 Kdl=2*zeta*wnl;
@@ -200,6 +213,49 @@ v_cable =  y(:,4*3*rode_number+rode_number+6:4*3*rode_number+rode_number+7);
 theta_dot_boat=  y(:,4*3*rode_number+rode_number+8);
 
 
+%% computaion of forces
+
+%fa and fb construction
+
+
+rdotdot_ = diff(rdot)/stepH;
+radius = 0.005;
+
+f_cable=zeros(length(x),3);
+for i=2:length(rdot(:,1))
+  P_Arch = ((-mg*9.81+1000*9.81*pi*Lg*radius^2)).*vect_z;
+  FluidFriction = (-1.2*2*radius*abs(b(i,:))*1000/2).*rdot(i,:).*abs(rdot(i,:));
+  fa=zeros(3*rode_number,1)+P_Arch+FluidFriction';
+  fb=fa;
+  tau1 = (fa+fb)./mg;
+  tauc1 = rdotdot_(i-1,:)'-tau1;
+  tauc1r = reshape(mg.*tauc1,3,rode_number);
+  f_cable(i,:) =sum(tauc1r,2)';
+end
+
+
+accel_x= zeros(size(x));
+comp_x = zeros(size(x));
+v_x =  zeros(size(x));
+
+for i=1:length(x)
+   time_idx = find(time>=x(i),1,'first');
+   time_vec = max(1,time_idx-2):min(length(accel),time_idx+2);
+   accel_x(i) =lagrange(x(i),time(time_vec),accel(time_vec));
+   comp_x(i) =lagrange(x(i),time(time_vec),heading_comp(time_vec));
+   v_x(i) = lagrange(x(i),time(time_vec),v_real(time_vec));
+end
+
+f_cable_frameBoat = f_cable;% Transform the force of the cable to the frame of the boat
+for i=1:length(f_cable_frameBoat(:,1))
+   f_cable_frameBoat(i,:)=([cos(-comp_x(i)) -sin(-comp_x(i)) 0;
+        sin(-comp_x(i)) cos(-comp_x(i)) 0;
+        0 0 1]*(f_cable(i,:)'))';
+    
+end
+
+%%
+
 errorLdot = zeros(length(x),rode_number);% compute the error of the simulation on the length of the cable
 for j=1:length(x)
     for k=1:rode_number
@@ -209,7 +265,7 @@ end
 
 %% visu
 
-timeJump = 1000;
+timeJump = 1;
 
 omega_dot_v = zeros(length(1:timeJump:length(x)-1),4);
 cable_drift = zeros(length(1:timeJump:length(x)-1),2);
@@ -222,8 +278,14 @@ f_rudder_= zeros(length(1:timeJump:length(x)-1),2);
 f_sail_= zeros(length(1:timeJump:length(x)-1),2);
 f_frict_=  zeros(length(1:timeJump:length(x)-1),2);
 
+
+
 index_out=1; %restarting for the controller for visualisation
-ratio =5;
+ratio =1;
+
+rod_end  = zeros(length(1:ratio:length(x)-1),3);
+rod_end_2 = zeros(length(1:ratio:length(x)-1),3);
+
 
 min_x = min(pos_boat(:,1));
 max_x = max(pos_boat(:,1));
@@ -263,6 +325,9 @@ for i=1:timeJump:length(x)-1
         -l+pos_b(3) 2+pos_b(3)])
     axis vis3d
     l = pos_boat(i,:);
+    reshapeB = reshape(b(i,:),3,rode_number);
+    rod_end(jk,:) = sum(reshapeB,2)';
+    rod_end_2(jk,:) = sum(reshapeB(:,1:rode_number/2),2)';
     for number_body=1:rode_number
         
         point=pos_boat(i,:);
@@ -271,6 +336,8 @@ for i=1:timeJump:length(x)-1
         end
         l = [l; point];
     end
+    
+    
     
     if print
         draw_cable(l,666,['r','g','b'])
@@ -281,19 +348,19 @@ for i=1:timeJump:length(x)-1
     end
     
     
-    [force_v_dot,v_dot_main,omega_dot_t,v_dot_cable,f_rudder,f_sail,f_frict] = model_sailboat_jaulin_modified4_visu(y(i,4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+8),wind_save(i,1),wind_save(i,2),sauv_delta(4,i),sauv_delta(3,i),-f_cable(i,:));
-    sum_force = (v_dot_main+v_dot_cable)*300;
-    omega_dot_v(jk,:) = omega_dot_t;
-    rod_end(jk,:) = sum(reshape(b(i,:),3,rode_number),2)';
-    cable_drift(jk,:) =v_cable(i,:);
-    v_down(jk) =v(i);
-    v_dot_c(jk,:) = v_dot_cable;
-    force_v_(jk,:) = force_v_dot;
-    v_dot_(jk,:) = v_dot_main;
-    f_rudder_(jk,:) = f_rudder;
-    f_sail_(jk,:) = f_sail;
-    f_frict_(jk,:) = f_frict;
-    %clf         %clear current figure
+%     [force_v_dot,v_dot_main,omega_dot_t,v_dot_cable,f_rudder,f_sail,f_frict] = model_sailboat_jaulin_modified4_visu(y(i,4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+8),wind_save(i,1),wind_save(i,2),sauv_delta(4,i),sauv_delta(3,i),-f_cable(i,:));
+%     sum_force = (v_dot_main+v_dot_cable)*300;
+%     omega_dot_v(jk,:) = omega_dot_t;
+%     rod_end(jk,:) = sum(reshape(b(i,:),3,rode_number),2)';
+%     cable_drift(jk,:) =v_cable(i,:);
+%     v_down(jk) =v(i);
+%     v_dot_c(jk,:) = v_dot_cable;
+%     force_v_(jk,:) = force_v_dot;
+%     v_dot_(jk,:) = v_dot_main;
+%     f_rudder_(jk,:) = f_rudder;
+%     f_sail_(jk,:) = f_sail;
+%     f_frict_(jk,:) = f_frict;
+%     %clf         %clear current figure
     
     if print
         hold on
@@ -379,7 +446,14 @@ plot(x(1:timeJump:length(x)-1),[v_dot_r force_v_r f_rudder_r f_sail_r f_frict_r 
 h=legend('$v_{dot}$','$cable$','$f_{rudder}$','$f_{sail}$','$f_{frict}$','$v_{\dot{c}}$','$v$','$rod_{end}$');
 set(h,'Interpreter','latex')
 
-
+%%
+size_buff = 100;
+rod_end_n = zeros(1,length(rod_end(:,1)));
+rod_end_n_2 = zeros(1,length(rod_end(:,1)));
+for i=1:length(rod_end_n)
+    rod_end_n(i) = mean(rod_end(max(1,i-size_buff):min(i+size_buff,length(rod_end_n)),3));
+    rod_end_n_2(i) = mean(rod_end_2(max(1,i-size_buff):min(i+size_buff,length(rod_end_n_2)),3));
+end
 
 
 %%

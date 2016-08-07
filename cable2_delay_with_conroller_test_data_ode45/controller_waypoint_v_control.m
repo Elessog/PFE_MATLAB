@@ -67,9 +67,9 @@ end
 offCourse = wrapToPi(m_courseTo_steer-theta);
 m_maxCommandAngle=commandAngle;
 
-if abs(offCourse) <= m_maxCommandAngle
+if all(abs(offCourse) <= m_maxCommandAngle)
     delta_r = m_portextreme+(-offCourse+m_maxCommandAngle)*(m_starboardextreme-m_portextreme) / (m_maxCommandAngle*2);
-elseif offCourse < m_maxCommandAngle     
+elseif all(offCourse < m_maxCommandAngle)     
     delta_r = m_starboardextreme;
 else
     delta_r = m_portextreme; 
@@ -83,13 +83,13 @@ phi_ap = atan2(W_ap(2),W_ap(1));    %apparent wind angle in b-frame
 
 relWind = wrapTo2Pi(phi_ap+pi);
 
-if relWind < pi/2
+if all(relWind < pi/2)
     delta_sMax = m_closereach;
 else 
     delta_sMax = m_closereach + (relWind -pi/2)*(m_running-m_closereach)/(135*pi/180);
 end
     
-if distance_to_waypoint<waypoint(3)
+if all(distance_to_waypoint<waypoint(3))
    i_way = mod(i_way,length(waypoints(:,1))) +1;
 end
 

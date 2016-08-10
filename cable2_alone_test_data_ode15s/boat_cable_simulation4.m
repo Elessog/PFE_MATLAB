@@ -8,8 +8,8 @@ function dy= boat_cable_simulation4(t,y )
 
 %% Cable
 global  Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kdl Kpl...
-    L vect_z boat_pos boat_dot boat_dotdot Lg mg accel time east_north...
-    heading_comp v_real;
+    L vect_z boat_pos boat_dot boat_dotdot Lg mg accel time east_north_real...
+    heading_comp v_real coeff_div_pressure_sensor coefSpring coefDotSpring;
 
 
 %% readjustment of position
@@ -21,8 +21,8 @@ if mod(t,10)<0.0001
 end
 
 time_vec = max(1,time_idx-2):min(length(accel),time_idx+2);
-east_x = lagrange(t,time(time_vec),east_north(1,time_vec));
-east_y = lagrange(t,time(time_vec),east_north(2,time_vec));
+east_x = lagrange(t,time(time_vec),east_north_real(1,time_vec));
+east_y = lagrange(t,time(time_vec),east_north_real(2,time_vec));
 
 v_v = lagrange(t,time(time_vec),v_real(time_vec));
 v_acc = lagrange(t,time(time_vec),accel(time_vec));
@@ -61,10 +61,64 @@ Ldot = zeros(rode_number,1);
 P_Arch = ((-mg*9.81+1000*9.81*pi*Lg*radius^2)).*vect_z;
 
 FluidFriction = (-1.2*2*radius*abs(b)*1000/2).*rdot.*abs(rdot);
+pressure_sensor_pos=(rode_number/coeff_div_pressure_sensor-1)*3+1:(rode_number/coeff_div_pressure_sensor-1)*3+3;
+pressure_sensor_cable = 1:pressure_sensor_pos(end);
+
+%adding effect of the pressure sensor
+P_Arch(pressure_sensor_pos) = P_Arch(pressure_sensor_pos) + (1000*9.81*pi*0.133*0.024^2).*vect_z(pressure_sensor_pos);
+FluidFriction(pressure_sensor_pos) = FluidFriction(pressure_sensor_pos) +...
+    (-1.2*0.024*0.133*1000/2).*rdot(pressure_sensor_pos).*abs(rdot(pressure_sensor_pos));
+
+%adding effect of pressure sensor cable
+FluidFriction(pressure_sensor_cable) = FluidFriction(pressure_sensor_cable) +...
+    (-1.2*0.01*abs(b(pressure_sensor_cable))*1000/2).*rdot(pressure_sensor_cable).*abs(rdot(pressure_sensor_cable));
+
+
 
 
 fa=zeros(3*rode_number,1)+P_Arch+FluidFriction;
 fb=fa;
+
+%%compute spring 
+
+for index=1:rode_number-1
+   b1 = b(1+(index-1)*3:3*index);
+   b2 = b(1+(index+1-1)*3:3*(index+1));
+   b1dot = bdot(1+(index-1)*3:3*index);
+   b2dot = bdot(1+(index+1-1)*3:3*(index+1));
+   
+   valueNorm = dot(b1,b2)/(norm(b1)*norm(b2));
+    if abs(valueNorm)>1
+%       %fprintf('go over 1 norm b1 %0.2f norm b2 %0.2f index %1.0f\n',norm(b1),norm(b2),index);
+       valueNorm=1;
+    end
+   
+   angle = wrapToPi(acos(valueNorm));
+   NormFres =-coefSpring*angle;
+   unitVect = cross(b1,b2);
+   if sin(angle)~=0 
+     F2vect = cross(b2,unitVect);
+     F2vectVal = NormFres*F2vect/norm(F2vect);
+     F1vect = cross(b1,unitVect);
+     F1vectVal = NormFres*F1vect/norm(F1vect);
+     fa(1+(index-1)*3:3*index) = fa(1+(index-1)*3:3*index) +F1vectVal;
+     fb(1+(index+1-1)*3:3*(index+1)) = fb(1+(index+1-1)*3:3*(index+1)) +F2vectVal;
+   %% damping term
+   angle_dot = (dot(b1dot,b1)+dot(b2dot,b2)-(dot(b1dot,b2)+dot(b1,b2dot)))/(norm(b1)*norm(b2)*sin(angle));
+   NormFfr= -coefDotSpring*angle_dot;
+   F2_vect = F2vect/norm(F2vect);
+   F1_vect = F1vect/norm(F1vect);
+   
+   fa(1+(index-1)*3:3*index) = fa(1+(index-1)*3:3*index) + F1_vect*NormFfr;
+   fb(1+(index+1-1)*3:3*(index+1)) = fb(1+(index+1-1)*3:3*(index+1)) + F2_vect*NormFfr;
+       
+   end
+   
+end
+
+
+
+
 
 tau1 = (fa+fb)./(2*mg);
 
@@ -77,10 +131,10 @@ fap=fa;
 fbp=fb;
 for i = 1:rode_number
     fbi=fb(1+(i-1)*3:i*3,:);%fa' and fb' orthogonal to b
-    fai=fa(1+(i-1)*3:i*3,:);
+    fai= fbi;%fa(1+(i-1)*3:i*3,:);
     bn =b(1+(i-1)*3:i*3,:);
     fap(1+(i-1)*3:i*3,:) = fai-bn*(fai'*bn)/(b'*b);
-    fbp(1+(i-1)*3:i*3,:) = fai-bn*(fbi'*bn)/(b'*b);
+    fbp(1+(i-1)*3:i*3,:) = fap(1+(i-1)*3:i*3,:);%fbi-bn*(fbi'*bn)/(b'*b);
 end
 
 [ tau2,lambda ] = bar_length_control(fap,fbp,b,bdot,errorint,Ldot,tau1,Ndotdot,Cdot,C,Kdl,Kpl);

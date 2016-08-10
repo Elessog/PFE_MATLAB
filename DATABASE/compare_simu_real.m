@@ -56,47 +56,70 @@ end
 
 %% Depth
 
-figure
-hold on
-plot(time_1-time_1(1),(press1+0.3)*sum(L)/3-0.3,'g')
-plot(time_2_simu-time_2_simu(1),rod_end_n,'r--')
-t=title(['Depth cable over time ',FileName]);
-set(t,'Interpreter','None')
-xlabel('Time (s)')
-ylabel('Depth (m)')
-legend('Real Test','Simulation')
-
-
-figure
-hold on
-plot(time_1-time_1(1),press1,'g')
-plot(time_2_simu-time_2_simu(1),rod_end_n_2,'r--')
-t=title(['Depth cable at the pressure sensor level over time ',FileName]);
-set(t,'Interpreter','None')
-xlabel('Time (s)')
-ylabel('Depth (m)')
-legend('Real Test','Simulation')
-
-
 
 rho = 1000;
 radius=0.005;
 ms=sum(m);
 g=9.81;
 CD=1.2;
-L_=6;
+L_=9;
 
 
-v_compute = min(v_1):0.1:max(v_1);
-figure
-hold on 
+v_compute =v_real;% min(v_1):0.1:max(v_1);
+
 sparsing = 1;
-depth_comp = -cos(atan(CD*2*radius*L_*rho*v_compute/(2*g*(rho*pi*L_*radius^2-ms))))*L_-0.3;
+depth_comp = -cos(atan(CD*2*radius*L_*rho*v_compute.^2/(2*g*(rho*pi*L_*radius^2-ms))))*L_-0.3;
 
 angle_ = atan(CD*2*radius*rho*L_*v_1(1:sparsing:end)/(2*(rho*pi*L_*radius^2-ms)));
 
-% figure
-% plot(v_1,angle_);
+depth1 =(press1+0.3)*sum(L)/3-0.3;
+
+depth1_x= zeros(1,length(time_2_simu)-1);
+depth_comp_2 =-cos(atan(CD*2*radius*L_*rho*v_2_simu.^2/(2*g*(rho*pi*L_*radius^2-ms))))*L_-0.3; 
+
+for i=1:length(x)-1
+   time_idx = find(time>=x(i),1,'first');
+   time_vec = max(1,time_idx-2):min(length(accel),time_idx+2);
+   depth1_x(i) =lagrange(x(i),time(time_vec),depth1(time_vec));
+end
+
+figure
+hold on
+plot(time_1-time_1(1),depth1,'g')
+plot(time_2_simu-time_2_simu(1),rod_end_n,'r--')
+plot(time_1-time_1(1),depth_comp,'b:','LineWidth',2)
+t=title(['Depth cable over time ',FileName]);
+set(t,'Interpreter','None')
+xlabel('Time (s)')
+ylabel('Depth (m)')
+legend('Real Test','Simulation','Pendulum')
+
+depth1_x_half= zeros(1,length(time_2_simu)-1);
+depth_comp_2_half =-cos(atan(CD*2*radius*L_*rho*v_2_simu.^2/(2*g*(rho*pi*L_*radius^2-ms))))*L_/coeff_div_pressure_sensor-0.3; 
+
+for i=1:length(x)-1
+   time_idx = find(time>=x(i),1,'first');
+   time_vec = max(1,time_idx-2):min(length(accel),time_idx+2);
+   depth1_x_half(i) =lagrange(x(i),time(time_vec),press1(time_vec));
+end
+figure
+hold on
+plot(time_1-time_1(1),press1,'g')
+plot(time_2_simu-time_2_simu(1),rod_end_n_2,'r--')
+plot(time_1-time_1(1),(depth_comp+0.3)/coeff_div_pressure_sensor-0.3,'b:','LineWidth',2)
+t=title(['Depth cable at the pressure sensor level over time ',FileName]);
+set(t,'Interpreter','None')
+xlabel('Time (s)')
+ylabel('Depth (m)')
+legend('Real Test','Simulation','Pendulum')
+
+
+figure
+hold on
+v_compute = min(v_1):0.1:max(v_1);
+sparsing = 1;
+depth_comp = -cos(atan(CD*2*radius*L_*rho*v_compute.^2/(2*g*(rho*pi*L_*radius^2-ms))))*L_-0.3;
+
 
 plot(v_1(1:sparsing:end),(press1(1:sparsing:end)+0.3)*sum(L)/3-0.3,'xg')
 plot(v_2_simu(1:sparsing:end),rod_end_n(1:sparsing:end),'+r')
@@ -105,7 +128,7 @@ t=title(['Depth cable over speed ',FileName]);
 set(t,'Interpreter','None')
 xlabel('Speed (m/s)')
 ylabel('Depth (m)')
-legend('Real Test','Simulation','single pendulem computed')
+legend('Real Test','Simulation','Pendulum')
 
 
 
@@ -114,11 +137,12 @@ hold on
 sparsing = 5;
 plot(v_1(1:sparsing:end),press1(1:sparsing:end),'xg')
 plot(v_2_simu(1:sparsing:end),rod_end_n_2(1:sparsing:end),'+r')
+plot(v_2_simu,depth_comp_2_half,'b');
 t=title(['Depth cable  at the pressure sensor level over speed ',FileName]);
 set(t,'Interpreter','None')
 xlabel('Speed (m/s)')
 ylabel('Depth (m)')
-legend('Real Test','Simulation')
+legend('Real Test','Simulation','Pendulum')
 
 
 

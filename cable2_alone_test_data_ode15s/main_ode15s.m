@@ -16,8 +16,9 @@ global L Lg mg m coeff_div_pressure_sensor coefSpring coefDotSpring;
 global  accel time heading_comp v_real;
 rode_number = 3;%number of rods to simulate the cable
 coeff_div_pressure_sensor = 3;
-coefSpring =0.1;
-coefDotSpring = -1;
+length_cable = 9;
+coefSpring =0;%2;
+coefDotSpring = -18;%-10;
 
 %% preprocessing of test data
 size_buff = 5;
@@ -81,7 +82,6 @@ boat_dotdot=[accel(1)*cos(heading_comp(1));accel(1)*cos(heading_comp(1));0];
 % b_0 = [0 0 0
 %     0  0 0
 %     -1 -1 -1];
-length_cable = 9;
 L=(length_cable/rode_number)*ones(rode_number,1);
 %L(rode_number) = 0.1;
 Lg = (length_cable/rode_number)*ones(rode_number*3,1);
@@ -100,7 +100,18 @@ pressure_sensor_cable = 1:pressure_sensor_pos(end);
 
 m(rode_number/coeff_div_pressure_sensor) =m(rode_number/coeff_div_pressure_sensor)+0.300;
 m(1:rode_number/coeff_div_pressure_sensor) =m(1:rode_number/coeff_div_pressure_sensor)+0.010*L(1:rode_number/coeff_div_pressure_sensor);
-mg(pressure_sensor_cable)=m(1:rode_number/coeff_div_pressure_sensor) ;
+
+for idx = 1:rode_number/coeff_div_pressure_sensor
+   mg(1+(idx-1)*3:3*idx)=m(idx) ;
+end
+
+%for 10m cable%%%%%%%
+mg((rode_number-1)*3+1:rode_number*3) = mg((rode_number-1)*3+1:rode_number*3)+dl*1;
+%%%%%%%%%%%%%%%%%%%%%
+
+
+m(rode_number) = m(rode_number)+dl*1;
+
 r_0 = zeros(3,rode_number);
 r_0(:,1) = b_0(:,1)/2.0+boat_pos;
 
@@ -249,7 +260,7 @@ end
 %v = VideoWriter('newfile.avi','Uncompressed AVI');
 %aviobj = avifile('example_osci.avi','compression','None','fps',25);
 
-draw_cable_ = 0;
+draw_cable_ = 1;
 
 ratio = 1;
 rod_end  = zeros(length(1:ratio:length(x)-1),3);
@@ -278,8 +289,8 @@ for i=1:ratio:length(x)-1
     
     l = pos_boat(i,:);
     reshapeB = reshape(b(i,:),3,rode_number);
-    rod_end(jk,:) = sum(reshapeB,2)';
-    rod_end_2(jk,:) = sum(reshapeB(:,1:rode_number/coeff_div_pressure_sensor),2)';
+    rod_end(jk,:) = sum(reshapeB,2)'-[0,0,0.3];
+    rod_end_2(jk,:) = sum(reshapeB(:,1:rode_number/coeff_div_pressure_sensor),2)'-[0,0,0.3];
     for number_body=1:rode_number
         
         point=pos_boat(i,:);
@@ -310,8 +321,9 @@ end
 %%
 %viobj = close(aviobj)
 
+%% analyse
 
-size_buff = 100;
+size_buff = 70;
 rod_end_n = zeros(1,length(rod_end(:,1)));
 rod_end_n_2 = zeros(1,length(rod_end(:,1)));
 for i=1:length(rod_end_n)
@@ -329,14 +341,24 @@ for i=1:length(rod_end_n)
 
 end
 
+rho = 1000;
+radius=0.005;
+ms=sum(m);
+g=9.81;
+CD=1.2;
 
 time_2 = x(1:ratio:length(x)-1);
+v_2_simu =v_2;
+L_=length_cable;
+depth_comp_2 =-cos(atan(CD*2*radius*L_*rho*v_2_simu.^2/(2*g*(rho*pi*L_*radius^2-ms))))*L_/coeff_div_pressure_sensor-0.3; 
 
 figure
 subplot(2,1,1)
 hold on
-plot(time_2-time_2(1),rod_end_2(:,3))
-plot(time-time(1),press_norm)
+plot(time_2-time_2(1),rod_end_n_2(:))
+plot(time_2-time_2(1),rod_end_2(:,3),'c')
+plot(time-time(1),press_norm,'g')
+plot(time_2-time_2(1),depth_comp_2(:),'r');
 hold off
 t=title(['Simulation Depth cable over time ',FileName]);
 set(t,'Interpreter','None')

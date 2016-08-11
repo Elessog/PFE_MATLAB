@@ -13,12 +13,13 @@ load([PathName,FileName]);
 global Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kpl Kdl Kil lambdainverse...
     vect_x vect_y vect_z boat_pos boat_dot boat_dotdot;
 global L Lg mg m coeff_div_pressure_sensor coefSpring coefDotSpring;
-global  accel time heading_comp v_real;
+global  accel time heading_comp v_real boolPrint;
 rode_number = 3;%number of rods to simulate the cable
 coeff_div_pressure_sensor = 3;
 length_cable = 9;
 coefSpring =0;%2;
 coefDotSpring = -18;%-10;
+boolPrint = 1;
 
 %% preprocessing of test data
 size_buff = 5;
@@ -179,7 +180,7 @@ y0 = vertcat(y0,[boat_pos;0;0;0]);
 
 %%%%%% Time parameters %%%%%%%
 stepH = 0.1;
-x= time(1):stepH:time(end-1);
+x= time(1):stepH:20;%time(end-1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 y = zeros(length(y0),length(x));
@@ -204,7 +205,7 @@ pos_boat = y(:,4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+3);
 % v_cable =  y(:,4*3*rode_number+rode_number+6:4*3*rode_number+rode_number+7);
 % theta_dot_boat=  y(:,4*3*rode_number+rode_number+8);
 
-%% computaion of forces
+%% computation of forces
 
 %fa and fb construction
 
@@ -260,7 +261,7 @@ end
 %v = VideoWriter('newfile.avi','Uncompressed AVI');
 %aviobj = avifile('example_osci.avi','compression','None','fps',25);
 
-draw_cable_ = 1;
+draw_cable_ = 0;
 
 ratio = 1;
 rod_end  = zeros(length(1:ratio:length(x)-1),3);

@@ -9,7 +9,7 @@ function dy= boat_cable_simulation4(t,y )
 %% Cable
 global  Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kdl Kpl...
     L  vect_z  boat_pos boat_dot boat_dotdot Lg mg accel time east_north_real...
-    heading_comp v_real coeff_div_pressure_sensor boolPrint coefSpring coefDotSpring;
+    heading_comp v_real coeff_div_pressure_sensor boolPrint;
 
 
 %% readjustment of position
@@ -141,7 +141,7 @@ fb=fa;
      speed_sign_b = sign(r1dot+crossB_omega);
      base_speed_vector =(norm(b1)/2)*r1dot.^2+(norm(b1)/2)*crossB_omega.^2;
      if rode_number ==1
-        speed_vector_a = base_speed_vector+(norm(b1)/3)*r1dot.*crossB_omega;%+(norm(b1)/2)*crossB_omega.^2;
+        speed_vector_a = base_speed_vector-(norm(b1)/3)*r1dot.*crossB_omega;%+(norm(b1)/2)*crossB_omega.^2;
          speed_vector_b = base_speed_vector+(norm(b1)/3)*r1dot.*crossB_omega;%+(norm(b1)/2)*crossB_omega.^2; 
      else
          speed_vector_a = base_speed_vector-(norm(b1)/3)*r1dot.*crossB_omega;

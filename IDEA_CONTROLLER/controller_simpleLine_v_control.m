@@ -72,21 +72,26 @@ end
 %Step 10-11
 if cos(theta-theta_bar) >= 0
     delta_r = delta_rMax*sin(theta-theta_bar);
-    if (diff_v)<0
-        delta_r_o = delta_r-sign(e)*pi/2*(coeff_rudder_speed*abs(diff_v)+coeff_d_rudder_speed*abs(diff_v_dot));
-        
-        fprintf('v_target %.2f  v %.2f delta_r : %.2f %.2f\n',v_target,v_boat,delta_r_o,delta_r);
-        delta_r = delta_r_o;
-    end
+%     if (diff_v)<0
+%         delta_r_o = delta_r-sign(e)*pi/2*(coeff_rudder_speed*abs(diff_v)+coeff_d_rudder_speed*abs(diff_v_dot));
+%         
+%         fprintf('v_target %.2f  v %.2f delta_r : %.2f %.2f\n',v_target,v_boat,delta_r_o,delta_r);
+%         delta_r = delta_r_o;
+%     end
 else
     delta_r = delta_rMax*sign(sin(theta-theta_bar));
 end
 
 %Step 12
+delta_sMax = pi/4*(cos(psi-theta_bar)+1);
+
 if diff_v<=0
     delta_sMax =0;% delta_sMax/exp(10*abs(diff_v));
-else
-    delta_sMax = pi/4*(cos(psi-theta_bar)+1);%*exp(-1/abs(diff_v);
+elseif v_boat>0
+    delta_sMax_o = delta_sMax/exp((v_target/abs(diff_v)-1)/20);
+    fprintf('v_target %.2f  v %.2f delta_s : %.2f %.2f\n',v_target,v_boat,delta_sMax_o,delta_sMax);
+    delta_sMax = delta_sMax_o;
+%         
 end
 
 

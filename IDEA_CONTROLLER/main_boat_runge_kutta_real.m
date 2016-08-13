@@ -148,7 +148,7 @@ y0 = vertcat(y0,[0;0;0]);
 
 %%%%%% Time parameters %%%%%%%
 stepH = 0.1;
-x= 1:stepH:200;
+x= 1:stepH:100;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 y = zeros(length(y0),length(x));
@@ -178,7 +178,7 @@ theta_dot_boat=  y(:,4*3*rode_number+rode_number+8);
 %% computation of forces
 
 %fa and fb construction
-
+x = x(1:length(t));
 
 rdotdot_ = diff(rdot)/stepH;
 radius = 0.005;
@@ -238,7 +238,10 @@ rod_end  = zeros(length(1:ratio:length(x)-1),3);
 rod_end_2 = zeros(length(1:ratio:length(x)-1),3);
 v_2 = zeros(length(1:ratio:length(x)-1),1);
 
-v_ = sqrt(y(:,4*3*rode_number+rode_number+4).^2+y(:,4*3*rode_number+rode_number+5).^2);
+v_ = v_2;
+diff_v_ = diff(pos_boat)/stepH;
+
+v_(1:end) = sqrt(diff_v_(:,1).^2+diff_v_(:,2).^2);
 
 if draw_cable_
     figure(666)
@@ -252,7 +255,7 @@ for i=1:ratio:length(x)-1
     time_idx = find(time>=x(i),1,'first');
     
     time_vec = max(1,time_idx-2):min(length(accel),time_idx+2);
-    v_2(jk)=v(i);
+    v_2(jk)=v_(i);
     
     pos_b = pos_boat(i,:);
     l = sum(L);

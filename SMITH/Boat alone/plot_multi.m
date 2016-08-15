@@ -75,8 +75,12 @@ index_out=1; %restarting for the controller for visualisation
 
 p1 = 0.05;
 a2 = 2;
-figure(666)
+
 jk = 0;
+
+%aviobj = avifile('smith.avi','compression','None','fps',10);
+%set(figure(666), 'Position', [100, 100, 1120, 840]);
+figure(666)
 for i=1:10:length(x)-1
     %% boat w
     %figure(668)
@@ -135,7 +139,9 @@ for i=1:10:length(x)-1
 
     title_f = sprintf('Time : %0.3f s theta %0.2f',i*stepH,theta_boat(i));
     title(title_f);
-
     pause(stepH*1)
+ %   aviobj = addframe(aviobj,gcf);
+    
     
 end
+%viobj = close(aviobj);

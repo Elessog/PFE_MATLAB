@@ -15,9 +15,10 @@ global Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kpl Kdl Kil lambdainverse...
 global L Lg mg m coeff_div_pressure_sensor coefSpring coefDotSpring;
 global  accel time heading_comp v_real boolPrint;
 rode_number = 4;%number of rods to simulate the cable
-coeff_div_pressure_sensor = 2;
+coeff_div_pressure_sensor = 2; %divisor for placing the pressure sensor on the cable (as integer)
+% 2 will mean on rod 2 if rod_number = 4 or 1 if rod number = 3
 length_cable = 6;
-coefSpring =0;%2;
+coefSpring =0.5;%2;
 coefDotSpring = -18;%-10;
 boolPrint = 1;
 
@@ -25,8 +26,6 @@ boolPrint = 1;
 size_buff = 5;
 
 heading_comp = correction_angle(heading2,5);%heading.*(v>=1)+heading2.*(v<1);
-IDX = kmeans([v',heading',(heading2-heading)'],2);
-v_real_2=v.*(IDX'==1)-v.*(IDX'~=1);
 
 idx1 = abs(wrapTo2Pi(heading-heading2))>pi/2;
 idx2 = abs(wrapToPi(heading-heading2))>pi/2;
@@ -55,7 +54,6 @@ for i=1:length(v)
     v_real(i) = mean(v_t(max(1,i-size_buff):min(i+size_buff,length(v))));
 end
 
-
 accel1 = diff(v_real)./diff(time);
 
 size_buff = 10;
@@ -63,6 +61,11 @@ accel = zeros(1,length(accel));
 for i=1:length(accel1)
     accel(i) = mean(accel1(max(1,i-size_buff):min(i+size_buff,length(accel1))));
 end
+
+heading_comp2 = heading_comp;
+heading_recomputed = atan2(diff(east_north_real(2,:)),diff(east_north_real(1,:)));
+heading_comp(1:end-1) = heading_recomputed;
+heading_comp = correction_angle(heading_comp,1);
 
 length_cable_press = 3;
 press = arduino(1,:);
@@ -326,7 +329,7 @@ end
 
 %% analyse
 
-size_buff = 70;
+size_buff = 50;
 rod_end_n = zeros(1,length(rod_end(:,1)));
 rod_end_n_2 = zeros(1,length(rod_end(:,1)));
 for i=1:length(rod_end_n)
@@ -353,7 +356,7 @@ CD=1.2;
 time_2 = x(1:ratio:length(x)-1);
 v_2_simu =v_2;
 L_=length_cable;
-depth_comp_2 =-cos(atan(CD*2*radius*L_*rho*v_2_simu.^2/(2*g*(rho*pi*L_*radius^2-ms))))*L_/coeff_div_pressure_sensor-0.3; 
+depth_comp_2 =-cos(atan(CD*2*radius*L_*rho*v_2_simu.^2/(2*g*(rho*pi*(L_*radius^2+0.133*0.024^2)-ms))))*L_/coeff_div_pressure_sensor-0.3; 
 
 figure
 subplot(2,1,1)

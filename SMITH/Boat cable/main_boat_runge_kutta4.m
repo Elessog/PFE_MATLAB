@@ -117,7 +117,7 @@ y0 = vertcat(y0,[origin;theta_0;0;0;0;0]);
 
 %%%%%% Time parameters %%%%%%%
 stepH = 0.001;
-x= 0:stepH:600;
+x= 0:stepH:170;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 y = zeros(length(y0),length(x));

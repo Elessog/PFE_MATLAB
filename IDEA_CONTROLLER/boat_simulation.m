@@ -5,7 +5,7 @@ global index_out max_windspeed ...
     controller_freq size_rect_cont control_computed ...
     coeff_div_pressure_sensor boolPrint ...
     boat_dot boat_dotdot  Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kdl Kpl...
-    L vect_z Lg mg;
+    L vect_z Lg mg error_diff_v;
     
 
 if mod(t,1)<0.1
@@ -26,7 +26,7 @@ rdot = y(3*3*rode_number+1:4*3*rode_number);
 errorint = y(4*3*rode_number+1:4*3*rode_number+rode_number);
 boat_pos = y(4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+3);
 y_boat = y(4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+8);
-
+error_int_diff_v = y(end);
 
 
 %% update  boat position for cable simulation
@@ -136,8 +136,8 @@ windspeed = max_windspeed*(1-exp(-t/time_const_wind));
 %% frequency of actuators
 if mod(t,1/controller_freq)<(1/controller_freq)*size_rect_cont
    if (~control_computed)
-     [delta_r, delta_s] = controller_simpleLine_v_control(y_boat(1),...
-         y_boat(2), y_boat(4),norm(boat_dot),psi, a, b,t);
+     [delta_r, delta_s,error_diff_v] = controller_simpleLine_v_control(y_boat(1),...
+         y_boat(2), y_boat(4),norm(boat_dot),psi, a, b,t,error_int_diff_v);
      control_computed = 1;
    end
 else
@@ -154,6 +154,7 @@ boat_dotdot = [dy_boat(5)*cos(y_boat(4))+dy_boat(6);...
 
 dy = vertcat(dy,dy_boat);
 dy = vertcat(dy,boat_dotdot);
+dy = vertcat(dy,error_diff_v);
 
 end
 

@@ -9,7 +9,7 @@ function dy = boat_cable_simulation4(t,y )
 %% Cable
 global  Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kdl Kpl...
     L vect_z boat_dot boat_dotdot Lg mg ...
-    coefSpring coeff_div_pressure_sensor boolPrint;
+    coefSpring coeff_div_pressure_sensor boolPrint speed_g;
 
 
 %% readjustment of position
@@ -37,7 +37,7 @@ boat_pos = y(4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+3);
 N = Nn1c;
 Ndot = Nn1c;
 Ndotdot =Nn1c;
-
+%boat_dot = y(end-2:end);
 N(1:3,1) =boat_pos;
 Ndot(1:3,1) = boat_dot;
 Ndotdot(1:3,1) =boat_dotdot;
@@ -175,7 +175,7 @@ for k=1:rode_number
     errorLdot(k) = norm(b(1+(k-1)*3:k*3))-L(k);
 end
 
-
+%boat_dotdot = [speed_g/0.1-10*boat_dot(1),0,0]';
 dy = vertcat(bdot,rdot);
 dy = vertcat(dy,bdotdot);
 dy = vertcat(dy,rdotdot);

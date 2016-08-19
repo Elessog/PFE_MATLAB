@@ -3,7 +3,7 @@ function dy = boat_simulation_aw(t,y)
 global index_out max_windspeed ...
     time_const_wind psi delta_r delta_s delay command_buffer_size ...
     controller_freq size_rect_cont control_computed buffer_command ...
-    idx_bfc  delta_r_s delta_s_s;
+    idx_bfc  delta_r_s delta_s_s error_diff_v boat_v;
 
 
 
@@ -15,8 +15,9 @@ windspeed = max_windspeed*(1-exp(-t/time_const_wind));
 
 if mod(t,1/controller_freq)<(1/controller_freq)*size_rect_cont
    if (~control_computed)
-     [delta_r_s, delta_s_s] = controller_phi_a(y(1),...
-         y(2), y(3), y(4),psi, a, b,windspeed);
+     [delta_r_s, delta_s_s,error_diff_v] = controller_simpleLine_v_control(y(1),...
+         y(2), y(4),boat_v,psi, a, b,t,y(end));
+
      buffer_command(:,idx_bfc) = [delta_r_s; delta_s_s;t];
      idx_bfc = idx_bfc+1;
      control_computed = 1;
@@ -37,6 +38,10 @@ end
 
 dy= model_sailboat_jaulin(y,windspeed,...
     psi,delta_s,delta_r);
+
+boat_v = norm(dy(1:2));
+
+dy = vertcat(dy,error_diff_v);
 
 end
 

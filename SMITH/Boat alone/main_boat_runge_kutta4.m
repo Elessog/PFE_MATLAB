@@ -81,6 +81,9 @@ theta_boat = y(:,3);
 v =  y(:,4);
 theta_dot_boat=  y(:,5);
 
+%% Instruction
+% to see data save the workspace as a .mat and launh plot multi
+
 %% visu
 % 
 % 

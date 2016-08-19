@@ -6,12 +6,11 @@ global L Lg mg m coeff_div_pressure_sensor;
 global  accel time heading_comp v_real boolPrint depth_target;
 global max_windspeed time_const_wind index_out controller_freq...
     size_rect_cont control_computed delta_s delta_r psi q coeff_rudder_speed;
-global old_t old_diff_v old_diff_v_dot coeff_d_rudder_speed diff_v_dot;
-
+global old_t old_diff_v old_diff_v_dot coeff_d_rudder_speed diff_v_dot tacking;
+global error_diff_v coeff_anti_windup;
 
 rode_number = 4;%number of rods to simulate the cable
 coeff_div_pressure_sensor = 2;
-coeff_rudder_speed = 2;
 length_cable = 20;
 boolPrint = 1;
 depth_target = -6.3;
@@ -24,12 +23,16 @@ angle_cable = asin(-press_norm_0/length_cable);
 max_windspeed =3;
 time_const_wind = 2;
 index_out = 1;
+tacking=0;
 
 old_t=0;
 old_diff_v=0;
 old_diff_v_dot=0;
 diff_v_dot = 0;
-coeff_d_rudder_speed = 0.2;
+coeff_d_rudder_speed = -1;
+coeff_rudder_speed = -1/20;
+coeff_anti_windup = 1;
+error_diff_v = 0;
 
 %% initialization of the state of the boat
 
@@ -144,11 +147,11 @@ y0 = vertcat(y0,zeros(size(q2)));
 y0 = vertcat(y0,zeros(size(q1)));
 y0 = vertcat(y0,zeros(rode_number,1));
 y0 = vertcat(y0,[boat_pos;theta_0;0;0;0;0]);
-y0 = vertcat(y0,[0;0;0]);
+y0 = vertcat(y0,[0;0;0;0]);
 
 %%%%%% Time parameters %%%%%%%
 stepH = 0.1;
-x= 1:stepH:100;
+x= 1:stepH:2000;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 y = zeros(length(y0),length(x));
@@ -158,7 +161,7 @@ F_xy =@(t,y) boat_cable_simulation(t,y);                    % change the functio
 f_cable= zeros(3,length(x));
 
 %% computation of the ODE
-options = odeset('RelTol',1e-2,'AbsTol',1e-4);
+options = odeset('RelTol',1e-2,'AbsTol',1e-4,'MaxStep',0.5/controller_freq);
 
 [t,y] = ode45(@boat_simulation,x,y0,options);
 
@@ -295,14 +298,17 @@ end
 %viobj = close(aviobj)
 
 %% draw position
-pointx = [0,20,40,60,30,0]*10;
-pointy = [0,0,20,10,0,0]*10;
+pointx = [0,20]*10; %,40,60,30,0
+pointy = [0,0]*10;%,20,10,0,0
 
 figure
 hold on
 plot(pos_boat(:,1) ,pos_boat(:,2),'r')
-plot(pointx,pointy)
+plot(pointx,pointy,'--')
+axis([-5 65 -5 5]);
 hold off
+title('Path of the boat')
+legend('Path of the boat','Line to follow')
 
 %% analyse
 
@@ -339,17 +345,20 @@ depth_comp_2 =-cos(atan(CD*2*radius*L_*rho*v_2_simu.^2/(2*g*(rho*pi*L_*radius^2-
 figure
 subplot(2,1,1)
 hold on
-plot(time_2-time_2(1),rod_end_n(:))
+%plot(time_2-time_2(1),rod_end_n(:))
 plot(time_2-time_2(1),rod_end(:,3),'c')
-plot(time_2-time_2(1),depth_comp_2(:),'r');
-plot(time_2-time_2(1),depth_target*ones(size(time_2)),'g');
+%plot(time_2-time_2(1),depth_comp_2(:),'r');
+plot(time_2-time_2(1),depth_target*ones(size(time_2)),'g--');
 hold off
 t=title(['Simulation Depth cable over time ']);
 set(t,'Interpreter','None')
 xlabel('Time (s)')
 ylabel('Depth (m)')
+legend('Depth of cable','target')
 subplot(2,1,2)
 plot(time_2-time_2(1),v_2)
+xlabel('Time (s)')
+ylabel('Speed (m/s)')
 
 figure
 plot(v_2,rod_end_2(:,3),'x')

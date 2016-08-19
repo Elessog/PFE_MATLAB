@@ -2,15 +2,20 @@ close all;clc;
 global index_out q max_windspeed time_const_wind v_target psi ...
     controller_freq size_rect_cont control_computed delay buffer_command...
     command_buffer_size delta_r delta_s idx_bfc...
-    delta_r_s delta_s_s pos_sum active_os tacking...
-    v_dot fs phi_ap W_ap ;
+    delta_r_s delta_s_s pos_sum active_os ...
+    v_dot fs phi_ap W_ap coeff_rudder_speed;
+global old_t old_diff_v old_diff_v_dot coeff_d_rudder_speed diff_v_dot tacking;
+global error_diff_v coeff_anti_windup boat_v;
 
 %%%%%% Time parameters %%%%%%%
 stepH = 0.01;
-x= 0:stepH:600;
+x= 0:stepH:2000;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-controller_freq = 2;
+
+
+
+controller_freq = 8;
 size_rect_cont = 0.1;
 control_computed = 0;
 delay = 0;
@@ -28,20 +33,40 @@ fs=0;
 v_dot=0;
 phi_ap=0;
 W_ap = [0,0];
+boat_v = 0;
 %% initialization of the state of the boat
-origin = [0;0];
+
+coeff_div_pressure_sensor = 2;
+length_cable = 20;
+boolPrint = 1;
+depth_target = -6.3;
+
+
+press_norm_0 =-5.3;
+
+tacking=0;
+
+old_t=0;
+old_diff_v=0;
+old_diff_v_dot=0;
+diff_v_dot = 0;
+coeff_d_rudder_speed = -1;
+coeff_rudder_speed = -1/20;
+coeff_anti_windup = 1;
+error_diff_v = 0;
+
+origin = [0;0;-0.3];
 
 index_out=1;%#ok<NASGU> %index for the path planning script
 q=1; %tacking variable
 max_windspeed = 3;
 time_const_wind = 0.1;
-v_target = 2.3;
 theta_0 = 0*pi/4;
 psi=-3*0*pi/4;
 
 %% creation vector y for the differential solving
 
-y0 = [origin;theta_0;0;0];
+y0 = [origin;theta_0;0;0;0];
 
 y = zeros(length(y0),length(x));
 y_s = zeros(length(y0),length(x));
@@ -78,54 +103,96 @@ v =  y(:,4);
 theta_dot_boat=  y(:,5);
 
 %% visu
-% 
-% 
-% index_out=1; %restarting for the controller for visualisation
-% 
-% p1 = 0.05;
-% a2 = 2;
-% figure(666)
-% jk = 0;
-% for i=1:10:length(x)-1
-%     %% boat
-%     %figure(668)
-%     clf
-%     pos_b = pos_boat(i,:);
-%     [a,b2,index_out] = path_planning_v_control(pos_b(1) ,pos_b(2) ,index_out);
-%     [delta_r, delta_s] = controller_simpleLine(pos_b(1) ,pos_b(2), theta_boat(i),v(i) ,psi, a, b2);
-% 
-%     %clf         %clear current figure
-%     hold on
-%     xlabel('x [m]')
-%     ylabel('y [m]')
-%     axis square
-%     axis_max_l = 100;
-%     axis_min = -2;
-%     s = axis_max_l*.04;
-%     axis([axis_min-s axis_min+axis_max_l+s axis_min-s axis_min+axis_max_l+s]);
-%     
-%     
-%     %draw wind direction
-%     m_x = axis_min+axis_max_l/2;
-%     m_y = axis_min+axis_max_l/2;
-%     x_w = [m_x m_x+3*s*cos(psi) m_x+3*s*cos(psi)-s*cos(psi-pi/4) m_x+3*s*cos(psi)-s*cos(psi+pi/4)];
-%     y_w = [m_y m_y+3*s*sin(psi) m_y+3*s*sin(psi)-s*sin(psi-pi/4) m_y+3*s*sin(psi)-s*sin(psi+pi/4)];
-%     line([x_w(1) x_w(2)],[y_w(1) y_w(2)],'color','b');
-%     line([x_w(2) x_w(3)],[y_w(2) y_w(3)],'color','b');
-%     line([x_w(2) x_w(4)],[y_w(2) y_w(4)],'color','b');
-%     line([a(1) b2(1)],[a(2) b2(2)],'color','black');
-%       
-%     sing = sign(sin(theta_boat(i)-psi));
-%     if sing==0
-%         sing = 1;
-%     end
-%     draw_boat([],s,pos_b(1),pos_b(2),theta_boat(i),delta_r,sing*delta_s,'r');
-%     %line([x,x+0.05*axis_max_l*cos(alpha_cable)],[y,y+0.05*axis_max_l*sin(alpha_cable)],'color','c')
-%     %delta_r
-%     %delta_sMax
-%     title_f = sprintf('Time : %0.3f s theta %0.2f',i*stepH,theta_boat(i));
-%     title(title_f);
-% 
-%     pause(stepH*1)
-%     
-% end
+
+%v = VideoWriter('newfile.avi','Uncompressed AVI');
+%aviobj = avifile('example_osci.avi','compression','None','fps',25);
+
+draw_cable_ = 0;
+
+ratio = 1;
+v_2 = zeros(length(1:ratio:length(x)-1),1);
+
+v_ = v_2;
+diff_v_ = diff(pos_boat)/stepH;
+
+v_(1:end) = sqrt(diff_v_(:,1).^2+diff_v_(:,2).^2);
+
+if draw_cable_
+    figure(666)
+end
+
+jk = 0;
+for i=1:ratio:length(x)-1
+    %% cable
+    jk = jk+1;
+    
+    time_idx = find(time>=x(i),1,'first');
+    
+    time_vec = max(1,time_idx-2):min(length(accel),time_idx+2);
+    v_2(jk)=v_(i);
+    
+    pos_b = pos_boat(i,:);
+    l = sum(L);
+    
+    l = pos_boat(i,:);
+      
+    
+    
+    if draw_cable_
+        clf
+        
+        axis([-10+pos_b(1) 10+pos_b(1)...
+            -10+pos_b(2) 10+pos_b(2)...
+            -10+pos_b(3) 2+pos_b(3)])
+        axis vis3d
+        title(sprintf('Time : %.3f',i*stepH));
+        drawnow
+        %aviobj = addframe(aviobj,gcf);
+        pause(ratio*stepH/1)
+        
+    end
+end
+
+%%
+%viobj = close(aviobj)
+
+%% draw position
+pointx = [0,20,40,60,30,0]*10; %,40,60,30,0
+pointy = [0,0,20,10,0,0]*10;%,20,10,0,0
+
+figure
+hold on
+plot(pos_boat(:,1) ,pos_boat(:,2),'r')
+plot(pointx,pointy,'--')
+hold off
+title('Path of the boat')
+legend('Path of the boat','Line to follow')
+
+%% analyse
+rho = 1000;
+radius=0.005;
+ms=sum(m);
+g=9.81;
+CD=1.2;
+
+time_2 = x(1:ratio:length(x)-1);
+v_pos = diff(pos_boat)/stepH;
+v_2_simu =sqrt(v_pos(:,1).^2+v_pos(:,2).^2);
+L_=length_cable;
+depth_comp_2 =-cos(atan(CD*2*radius*L_*rho*v_2_simu.^2/(2*g*(rho*pi*L_*radius^2-ms))))*L_-0.3; 
+
+figure
+subplot(2,1,1)
+hold on
+plot(time_2-time_2(1),depth_comp_2(:),'r');
+plot(time_2-time_2(1),depth_target*ones(size(time_2)),'g--');
+hold off
+t=title(['Simulation Depth cable over time ']);
+set(t,'Interpreter','None')
+xlabel('Time (s)')
+ylabel('Depth (m)')
+legend('Depth of cable','target')
+subplot(2,1,2)
+plot(time_2-time_2(1),v_2)
+xlabel('Time (s)')
+ylabel('Speed (m/s)')

@@ -194,101 +194,103 @@ end
 
 %% visu
 
-% 
-% 
-% omega_dot_v = zeros(length(1:100:length(x)-1),4);
-% cable_drift = zeros(length(1:100:length(x)-1),2);
-% rod_end  = zeros(length(1:100:length(x)-1),3);
-% 
-% index_out=1; %restarting for the controller for visualisation
-% 
-% p1 = 0.05;
-% a2 = 2;
-% figure(666)
-% jk = 0;
-% for i=1:100:length(x)-1
-%     %% cable
-%     jk = jk+1;
-%     clf
-%     subplot(1,3,1)
-%     
-%     pos_b = pos_boat(i,:);
-%     l = sum(L);
-%     axis([-l+pos_b(1) l+pos_b(1)...
-%         -l+pos_b(2) l+pos_b(2)...
-%         -l+pos_b(3) 2+pos_b(3)])
-%     axis vis3d
-%     l = pos_boat(i,:);
-%     for number_body=1:rode_number
-%         
-%         point=pos_boat(i,:);
-%         for j=1:number_body
-%             point = point+b(i,1+(j-1)*3:j*3);
-%         end
-%         l = [l; point];
-%     end
-%     
-%     draw_cable(l,666,['r','g','b'])
-%     
-%     %% boat
-%     %figure(668)
-%     subplot(1,3,2)
-%     
-%     [a,b2,index_out] = path_planning_v_control(pos_b(1) ,pos_b(2) ,index_out);
-%     [delta_r, delta_s] = controller_simpleLine_v_control(pos_b(1) ,pos_b(2), theta_boat(i),v(i) ,psi, a, b2);
-%     [force_v_dot,v_dot_main,omega_dot_t,v_dot_cable] = model_sailboat_jaulin_modified4_visu(y(i,4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+8),a2,psi,delta_s,delta_r,-f_cable(i,:));
-%     sum_force = (v_dot_main+v_dot_cable)*300;
-%     omega_dot_v(jk,:) = omega_dot_t;
-%     rod_end(jk,:) = sum(reshape(b(i,:),3,rode_number),2)';
-%     cable_drift(jk,:) =v_cable(i,:);
-%     %clf         %clear current figure
-%     hold on
-%     xlabel('x [m]')
-%     ylabel('y [m]')
-%     axis square
-%     axis_max_l = 100;
-%     axis_min = -2;
-%     s = axis_max_l*.04;
-%     axis([axis_min-s axis_min+axis_max_l+s axis_min-s axis_min+axis_max_l+s]);
-%     
-%     
-%     %draw wind direction
-%     m_x = axis_min+axis_max_l/2;
-%     m_y = axis_min+axis_max_l/2;
-%     x_w = [m_x m_x+3*s*cos(psi) m_x+3*s*cos(psi)-s*cos(psi-pi/4) m_x+3*s*cos(psi)-s*cos(psi+pi/4)];
-%     y_w = [m_y m_y+3*s*sin(psi) m_y+3*s*sin(psi)-s*sin(psi-pi/4) m_y+3*s*sin(psi)-s*sin(psi+pi/4)];
-%     line([x_w(1) x_w(2)],[y_w(1) y_w(2)],'color','b');
-%     line([x_w(2) x_w(3)],[y_w(2) y_w(3)],'color','b');
-%     line([x_w(2) x_w(4)],[y_w(2) y_w(4)],'color','b');
-%     line([a(1) b2(1)],[a(2) b2(2)],'color','black');
-%     
-%     ratio = 10;
-%     line([pos_b(1)  pos_b(1)+v(i)*cos(theta_boat(i))*ratio],[pos_b(2)  pos_b(2)+v(i)*sin(theta_boat(i))*ratio],'color','b');
-%     line([pos_b(1)  pos_b(1)+v(i)*cos(theta_boat(i))*ratio+p1*a2*cos(psi)*ratio+v_cable(1)*ratio],[pos_b(2)  pos_b(2)+v(i)*sin(theta_boat(i))*ratio+p1*a2*sin(psi)*ratio+v_cable(2)*ratio],'color','g');
-%     
-%     %
-%     %     line([pos_b(1)  pos_b(1)+v_dot_main(1)],[pos_b(2)  pos_b(2)+v_dot_main(2)],'color','g');
-%     line([pos_b(1)-2*cos(theta_boat(i))  pos_b(1)-2*cos(theta_boat(i))+force_v_dot(1)],...
-%         [pos_b(2)-2*sin(theta_boat(i))  pos_b(2)-2*sin(theta_boat(i))+force_v_dot(2)],'color','r');
-%     %     line([pos_b(1)  pos_b(1)+sum_force(1)],[pos_b(2)  pos_b(2)+sum_force(2)],'color','m');
-%     %
-%     %
-%     sing = sign(sin(theta_boat(i)-psi));
-%     if sing==0
-%         sing = 1;
-%     end
-%     draw_boat([],s,pos_b(1),pos_b(2),theta_boat(i),delta_r,sing*delta_s);
-%     %line([x,x+0.05*axis_max_l*cos(alpha_cable)],[y,y+0.05*axis_max_l*sin(alpha_cable)],'color','c')
-%     %delta_r
-%     %delta_sMax
-%     title_f = sprintf('Time : %0.3f s',i*stepH);
-%     title(title_f);
-%     
-%     subplot(1,3,3)
-%     %plot((1:100:length(x)-1)*stepH,omega_dot_v);
-%     plot((1:100:length(x)-1)*stepH,rod_end);
-%     %plot((1:100:length(x)-1)*stepH,cable_drift);
-%     %legend('x','y','z');
-%     pause(stepH*100)
-%     
-% end
+
+
+omega_dot_v = zeros(length(1:100:length(x)-1),4);
+cable_drift = zeros(length(1:100:length(x)-1),2);
+rod_end  = zeros(length(1:100:length(x)-1),3);
+v_down = zeros(length(1:100:length(x)-1),1);
+
+index_out=1; %restarting for the controller for visualisation
+
+p1 = 0.05;
+a2 = 2;
+figure(666)
+jk = 0;
+for i=1:100:length(x)-1
+    %% cable
+    jk = jk+1;
+    clf
+    subplot(1,3,1)
+    
+    pos_b = pos_boat(i,:);
+    l = sum(L);
+    axis([-l+pos_b(1) l+pos_b(1)...
+        -l+pos_b(2) l+pos_b(2)...
+        -l+pos_b(3) 2+pos_b(3)])
+    axis vis3d
+    l = pos_boat(i,:);
+    for number_body=1:rode_number
+        
+        point=pos_boat(i,:);
+        for j=1:number_body
+            point = point+b(i,1+(j-1)*3:j*3);
+        end
+        l = [l; point];
+    end
+    
+    draw_cable(l,666,['r','g','b'])
+    
+    %% boat
+    %figure(668)
+    subplot(1,3,2)
+    
+    [a,b2,index_out] = path_planning_v_control(pos_b(1) ,pos_b(2) ,index_out);
+    [delta_r, delta_s] = controller_simpleLine_v_control(pos_b(1) ,pos_b(2), theta_boat(i),v(i) ,psi, a, b2);
+    [force_v_dot,v_dot_main,omega_dot_t,v_dot_cable] = model_sailboat_jaulin_modified4_visu(y(i,4*3*rode_number+rode_number+1:4*3*rode_number+rode_number+8),a2,psi,delta_s,delta_r,-f_cable(i,:));
+    sum_force = (v_dot_main+v_dot_cable)*300;
+    omega_dot_v(jk,:) = omega_dot_t;
+    rod_end(jk,:) = sum(reshape(b(i,:),3,rode_number),2)';
+    cable_drift(jk,:) =v_cable(i,:);
+    v_down(jk) =v(i);
+    %clf         %clear current figure
+    hold on
+    xlabel('x [m]')
+    ylabel('y [m]')
+    axis square
+    axis_max_l = 100;
+    axis_min = -2;
+    s = axis_max_l*.04;
+    axis([axis_min-s axis_min+axis_max_l+s axis_min-s axis_min+axis_max_l+s]);
+    
+    
+    %draw wind direction
+    m_x = axis_min+axis_max_l/2;
+    m_y = axis_min+axis_max_l/2;
+    x_w = [m_x m_x+3*s*cos(psi) m_x+3*s*cos(psi)-s*cos(psi-pi/4) m_x+3*s*cos(psi)-s*cos(psi+pi/4)];
+    y_w = [m_y m_y+3*s*sin(psi) m_y+3*s*sin(psi)-s*sin(psi-pi/4) m_y+3*s*sin(psi)-s*sin(psi+pi/4)];
+    line([x_w(1) x_w(2)],[y_w(1) y_w(2)],'color','b');
+    line([x_w(2) x_w(3)],[y_w(2) y_w(3)],'color','b');
+    line([x_w(2) x_w(4)],[y_w(2) y_w(4)],'color','b');
+    line([a(1) b2(1)],[a(2) b2(2)],'color','black');
+    
+    ratio = 10;
+    line([pos_b(1)  pos_b(1)+v(i)*cos(theta_boat(i))*ratio],[pos_b(2)  pos_b(2)+v(i)*sin(theta_boat(i))*ratio],'color','b');
+    line([pos_b(1)  pos_b(1)+v(i)*cos(theta_boat(i))*ratio+p1*a2*cos(psi)*ratio+v_cable(1)*ratio],[pos_b(2)  pos_b(2)+v(i)*sin(theta_boat(i))*ratio+p1*a2*sin(psi)*ratio+v_cable(2)*ratio],'color','g');
+    
+    %
+    %     line([pos_b(1)  pos_b(1)+v_dot_main(1)],[pos_b(2)  pos_b(2)+v_dot_main(2)],'color','g');
+    line([pos_b(1)-2*cos(theta_boat(i))  pos_b(1)-2*cos(theta_boat(i))+force_v_dot(1)],...
+        [pos_b(2)-2*sin(theta_boat(i))  pos_b(2)-2*sin(theta_boat(i))+force_v_dot(2)],'color','r');
+    %     line([pos_b(1)  pos_b(1)+sum_force(1)],[pos_b(2)  pos_b(2)+sum_force(2)],'color','m');
+    %
+    %
+    sing = sign(sin(theta_boat(i)-psi));
+    if sing==0
+        sing = 1;
+    end
+    draw_boat([],s,pos_b(1),pos_b(2),theta_boat(i),delta_r,sing*delta_s,'b');
+    %line([x,x+0.05*axis_max_l*cos(alpha_cable)],[y,y+0.05*axis_max_l*sin(alpha_cable)],'color','c')
+    %delta_r
+    %delta_sMax
+    title_f = sprintf('Time : %0.3f s',i*stepH);
+    title(title_f);
+    
+    subplot(1,3,3)
+    %plot((1:100:length(x)-1)*stepH,omega_dot_v);
+    plot((1:100:length(x)-1)*stepH,rod_end);
+    %plot((1:100:length(x)-1)*stepH,cable_drift);
+    %legend('x','y','z');
+    pause(stepH*100)
+    
+end

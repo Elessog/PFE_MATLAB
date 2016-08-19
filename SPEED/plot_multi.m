@@ -68,14 +68,14 @@ if exist('sauv_delta','var')
     set(h,'Interpreter','latex')
 end
 % 
-if exist('sauv_phi_ap','var')
-    figure
-    hold on
-    plot(x,[sauv_phi_ap;sauv_phi_ap_wt]);
-    hold off
-    h = legend('$\phi_{ap\phi}$','$\phi_{ap\textnormal{old}}$');
-    set(h,'Interpreter','latex')
-end
+% if exist('sauv_phi_ap','var')
+%     figure
+%     hold on
+%     plot(x,[sauv_phi_ap;sauv_phi_ap_wt]);
+%     hold off
+%     h = legend('$\phi_{ap\phi}$','$\phi_{ap\textnormal{old}}$');
+%     set(h,'Interpreter','latex')
+% end
 
 figure
 hold on
@@ -83,15 +83,15 @@ plot(x,[v,v_wt]);
 hold off
 h = legend('$v_{\phi}$','$v_{\textnormal{old}}$');
 set(h,'Interpreter','latex')
-
-if exist('sauv_w_ap','var')
-    figure
-    hold on
-    plot(x,[sauv_w_ap;sauv_w_ap_wt]);
-    hold off
-    h = legend('$W_{x\phi}$','$W_{y\phi}$','$W_{x\textnormal{old}}$','$W_{y\textnormal{old}}$');
-    set(h,'Interpreter','latex')
-end
+% 
+% if exist('sauv_w_ap','var')
+%     figure
+%     hold on
+%     plot(x,[sauv_w_ap;sauv_w_ap_wt]);
+%     hold off
+%     h = legend('$W_{x\phi}$','$W_{y\phi}$','$W_{x\textnormal{old}}$','$W_{y\textnormal{old}}$');
+%     set(h,'Interpreter','latex')
+% end
 
 
 %% visu

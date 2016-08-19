@@ -1,6 +1,6 @@
-function [delta_r, delta_sMax] = controller_simpleLine_v_control(x,y,theta,v_boat, psi, a, b,t)
+function [delta_r, delta_sMax,diff_v] = controller_simpleLine_v_control(x,y,theta,v_boat, psi, a, b,t,diff_v_integral)
 global q depth_target m tacking L coeff_rudder_speed
-global old_t old_diff_v old_diff_v_dot diff_v_dot coeff_d_rudder_speed
+global old_t old_diff_v old_diff_v_dot diff_v_dot coeff_d_rudder_speed coeff_anti_windup
 %controller_simpleLine Simple line following controller
 %   Controller based on the paper "A simple controller for line
 %   following of sailboats" by Luc Jaulin and Fabrice Le Bars
@@ -72,6 +72,7 @@ end
 %Step 10-11
 if cos(theta-theta_bar) >= 0
     delta_r = delta_rMax*sin(theta-theta_bar);
+%%% rudder speed controller
 %     if (diff_v)<0
 %         delta_r_o = delta_r-sign(e)*pi/2*(coeff_rudder_speed*abs(diff_v)+coeff_d_rudder_speed*abs(diff_v_dot));
 %         
@@ -87,11 +88,26 @@ delta_sMax = pi/4*(cos(psi-theta_bar)+1);
 
 if diff_v<=0
     delta_sMax =0;% delta_sMax/exp(10*abs(diff_v));
+    diff_v = 0;
 elseif v_boat>0
-    delta_sMax_o = delta_sMax/exp((v_target/abs(diff_v)-1)/20);
-    fprintf('v_target %.2f  v %.2f delta_s : %.2f %.2f\n',v_target,v_boat,delta_sMax_o,delta_sMax);
-    delta_sMax = delta_sMax_o;
-%         
+%%%%%% PID sail controller
+    delta_sMax_o = delta_sMax*(abs(diff_v)/v_target+coeff_d_rudder_speed*diff_v_dot+coeff_rudder_speed*diff_v_integral);
+    
+    if delta_sMax_o<0
+        diff_v = 0;%diff_v+(1/coeff_anti_windup)*(-delta_sMax_o);
+        delta_sMax_o=0;
+    elseif delta_sMax_o>delta_sMax
+         diff_v =0; %diff_v+(1/coeff_anti_windup)*(delta_sMax-delta_sMax_o);
+        delta_sMax_o = delta_sMax;
+    end
+
+%%%%% EXP sail controller
+%    delta_sMax_o = delta_sMax;
+%    
+%    delta_sMax = delta_sMax*exp(coeff_rudder_speed*(v_target/diff_v-1));
+   
+   %fprintf('v_target %.2f  v %.2f delta_s : %.2f %.2f\n',v_target,v_boat,delta_sMax_o,delta_sMax);
+%  
 end
 
 

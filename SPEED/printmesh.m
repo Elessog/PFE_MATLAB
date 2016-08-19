@@ -2,6 +2,7 @@ function  printmesh(hObject, event)
 
 phi = get(hObject,'Value');
 subplot(1,2,1)
+
 [az1,el1] = view;
 subplot(1,2,2)
 [az,el] = view;
@@ -24,11 +25,13 @@ ylab = '\delta_r';
 figure(100)
 
 subplot(1,2,1)
+
 surf(xx,yy,vdot)
 colormap(jet)    % change color map
 xlabel(xlab)
 ylabel(ylab)
 view(az1,el1) 
+axis([-1.5 1.5  -1.5 1.5  -50 15]);
 subplot(1,2,2)
 surf(xx,yy,omega_dot)
 colormap(jet)    % change color map

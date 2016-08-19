@@ -1,7 +1,7 @@
 close all;clc;
 global Wn1c Pn1c Wn1ca Wn1cb rode_number Nn1c Kpl Kdl Kil lambdainverse...
     vect_x vect_y vect_z boat_dot boat_dotdot coeff_div_pressure_sensor;
-global L Lg mg m boolPrint coefSpring;
+global L Lg mg m boolPrint coefSpring speed_g;
 
 rode_number = 4;%number of rods to simulate the cable
 coeff_div_pressure_sensor = 2; %divisor for placing the pressure sensor on the cable (as integer)
@@ -11,27 +11,28 @@ coefSpring =0.5;%2;
 coefDotSpring = -18;%-10;
 boolPrint = 1;
 
-mass_vect = 0:11:10;
+mass_vect = 0.1:0.1:0.9;
 angle_cable = zeros(length(mass_vect),1);
 force_end_cable = zeros(length(mass_vect),3);
 index = 0;
-vect_speed = 0.01:0.1:3;
+vect_speed = 0.01:0.02:3;
 
 %speed = 1;
 
 
 end_force = [];
 end_depth = [];
+speed = 2;
 
-for speed =  vect_speed
+for mass_lin =  mass_vect
     
- mass = 0
 %% initialization of the state of the boat
 index = index+1
 origin = [0;0;0];
 boat_dot=[speed;0;0];
 boat_dotdot=[0;0;0];
 theta_0 = 0;
+speed_g = speed;
 %% Matrix creation for the cable simulation
 %b initial vector of the rods
 % b_0 = [0 0 0
@@ -41,13 +42,12 @@ L=4*ones(rode_number,1);
 Lg = 4*ones(rode_number*3,1);
 Lg(rode_number*3-2:rode_number*3) = 4;
 b_0 = zeros(3,rode_number);
-b_0(1,:)=-L'.*cos(theta_0).*ones(1,rode_number);
-b_0(2,:)=-L'.*sin(theta_0).*ones(1,rode_number);
-dl = 0.13;
+% b_0(1,:)=-L'.*cos(theta_0).*ones(1,rode_number);
+% b_0(2,:)=-L'.*sin(theta_0).*ones(1,rode_number);
+b_0(3,:)=-L'.*ones(1,rode_number);
+dl = mass_lin;
 m = dl*L;
 mg = dl*Lg;
-m(length(m)) =m(length(m))+mass;
-mg(length(mg)-2:length(mg))=m(length(m)) ;
 r_0 = zeros(3,rode_number);
 r_0(:,1) = b_0(:,1)/2.0;
 
@@ -105,6 +105,7 @@ Kil=10000;
 
 lambdainverse = ((Wn1c*Wn1c'-6*Pn1c*(Wn1ca'-Wn1cb'))^-1);%unchanging part of the lagrangian multipliers calculation
 
+q1dot = ones(size(q1)).*boat_dotdot(1).*vect_x;
 
 %% creation vector y for the differential solving
 y0 = vertcat(q2,q1);
@@ -124,7 +125,7 @@ F_xy =@(t,y) boat_cable_simulation4(t,y);                    % change the functi
 
 
 %% computation of the ODE
-options = odeset('RelTol',1e-1,'AbsTol',1e-2);
+options = odeset('RelTol',1e-1,'AbsTol',1e-3);
 
 [t,y] = ode45(@boat_cable_simulation4,x,y0,options);
 
@@ -153,7 +154,7 @@ f_cable=zeros(length(x),3);
 for i=2:length(rdot(:,1))
   P_Arch = ((-mg*9.81+1000*9.81*pi*Lg*radius^2)).*vect_z;
   FluidFriction = (-1.2*2*radius*abs(b(i,:))*1000/2).*rdot(i,:).*abs(rdot(i,:));
-  fa=zeros(3*rode_number,1)+P_Arch+FluidFriction';
+  fa=(P_Arch+FluidFriction')/2;
   fb=fa;
   tau1 = (fa+fb)./mg;
   tauc1 = rdotdot_(i-1,:)'-tau1;

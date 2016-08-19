@@ -1,6 +1,6 @@
 close all;
-a=5;
-v =0;
+a=3;
+v =1;
 
 theta = 0;
 kj = 0;
@@ -11,7 +11,7 @@ do_plot = 0;
 for phi=phi_v;
     delta_s = -1.5:0.01:1.5;
     delta_r = -1.5:0.01:1.5;
-    omega = 0.2;
+    omega = 0.0;
 
     [xx,yy] = meshgrid(delta_s,delta_r);
     delta_s =xx;
@@ -41,8 +41,8 @@ for phi=phi_v;
     [val1,idx2] = max(val1(:));
     idx1 = idx1(idx2);
     idxo2 = idx2;
-    [valo1,idxo1] = min(abs(omega_dot(100:220,idx2)));
-    idxo1 = idxo1+99;
+    [valo1,idxo1] = min(abs(omega_dot(110:200,idx2)));
+    idxo1 = idxo1+109;
     %idxo1 = idxo1(idxo2);
     vect_sauv(:,kj) = [val1;delta_s(1,idx2);delta_r(idx1,1);valo1;delta_s(1,idxo2);delta_r(idxo1,1);vdot(idxo1,idxo2);omega_dot(idx1,idx2)];
 end

@@ -14,16 +14,8 @@ if ~run_charged
     clear all
     [FileName1,PathName] = uigetfile('*.mat','Select the MATLAB run');
     
-    load(FileName1);
-
-    labview_wayponts = 0;
-    if labview_wayponts
-        [FileName2,PathName2] = uigetfile('*.mat','Select the labview waypoints');
-        load(FileName2);
-        waypoints = [utm_x-origin(1) utm_y-origin(2) (1:length(utm_x))'];
-        
-        
-    end
+    load([PathName,FileName1]);
+    
     waypoints_1 = waypoints;
     time_1 = time;
 	east_north_1 = east_north;
@@ -37,16 +29,8 @@ if ~run_charged
     
     [FileName3,PathName3] = uigetfile('*.mat','Select the MATLAB run');
     
-    load(FileName3);
+    load([PathName3,FileName3]);
 
-    labview_wayponts = 0;
-    if labview_wayponts
-        [FileName2,PathName2] = uigetfile('*.mat','Select the labview waypoints');
-        load(FileName2);
-        waypoints = [utm_x-origin(1) utm_y-origin(2) (1:length(utm_x))'];
-        
-        
-    end
     waypoints_2 = waypoints;
     time_2 = time;
 	east_north_2 = east_north;
